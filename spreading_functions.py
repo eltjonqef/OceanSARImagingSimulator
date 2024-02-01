@@ -1,14 +1,14 @@
 import numpy as np
 from scipy.special import gamma
-def Simple_Cosine(theta,n):
-    return 2/np.pi*np.power(np.cos(theta),n) 
+def Simple_Cosine(theta, wind_direction, n):
+    return 2/np.pi*np.power(np.cos(theta-wind_direction),n) 
 
-def Longuet_Higgins(theta, S):
-    return (gamma(S+1)/(gamma(S+0.5)*2*np.sqrt(np.pi)))*np.power(np.cos(theta/2),2*S)
+def Longuet_Higgins(theta, wind_direction, S):
+    return (gamma(S+1)/(gamma(S+0.5)*2*np.sqrt(np.pi)))*np.power(np.cos((theta-wind_direction)/2),2*S)
 
-def Elfouhaily(theta, k, v):
+def Elfouhaily(theta, wind_direction, k, v):
     g=9.80665
-    F=25000
+    F=80000
     a_0=np.log(2)/4
     a_p=4
     c_m=0.23
@@ -24,4 +24,4 @@ def Elfouhaily(theta, k, v):
     k_p=k_0*np.power(Omega_c,2)
     c_p=np.sqrt(g/k_p)
     delta_k=np.tanh(a_0+a_p*np.power(c/c_p,2.5)+a_m*np.power(c_m/c,2.5))
-    return 1/(2*np.pi)*(1+delta_k*np.cos(2*theta))
+    return 1/(2*np.pi)*(1+delta_k*np.cos(2*(theta-wind_direction)))

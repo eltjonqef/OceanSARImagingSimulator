@@ -8,7 +8,7 @@ def pierson_moskowitz(k, v):
     return (a/(2*np.power(k,3)))*np.exp(-b*np.power(g/k,2)/V4)
     
 def JONSWAP(k, v):
-    F=25000
+    F=80000
     g=9.8067
     gamma=3.3
     a=0.076*(v**2/(F*g))**0.22
@@ -27,7 +27,7 @@ def JONSWAP(k, v):
     return np.concatenate((S_low, S_high))
 
 def lower(k, v):
-    F=25000
+    F=80000
     g=9.80665
     k_0=g/v**2
     X_0=2.2e-4

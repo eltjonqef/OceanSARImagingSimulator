@@ -11,9 +11,9 @@ def Spectra(wavenumbers, windspeeds, spectrum, title, xlabel, ylabel, fileTitle)
     plt.ylabel(ylabel)
     plt.legend()
     plt.grid(True)
-    #plt.savefig(f'results/{fileTitle}.png')
+    plt.savefig(f'results/{fileTitle}.png')
     plt.show()
-    #plt.close()
+    plt.close()
 
 def Spread(theta, n, spreads, title, id, fileTitle, Elfouhaily=False):
     if Elfouhaily:
@@ -25,5 +25,6 @@ def Spread(theta, n, spreads, title, id, fileTitle, Elfouhaily=False):
     plt.title(title)
     plt.legend()
     plt.grid(True)
-    #plt.savefig(f'results/{fileTitle}.png')
+    plt.savefig(f'results/{fileTitle}.png')
     plt.show()
+    plt.close()
