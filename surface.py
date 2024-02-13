@@ -2,48 +2,56 @@
 import numpy as np
 from multiprocessing import Pool
 from scipy.fft import fft2, ifft2
-class surfaceGenerator:
-    def __init__(self, spectrum, spreading, wavenumbers, theta, size, facet, seconds):
-        g=9.80665
-        self.facet=facet
-        self.spectrum=spectrum
-        self.spreading=spreading
-        self.delta_k=np.diff(wavenumbers, prepend=wavenumbers[0])
-        self.delta_theta=np.diff(theta, prepend=theta[0])
-        self.wavenumbers=wavenumbers
-        self.theta=theta
-        self.sinTheta=np.sin(self.theta)
-        self.cosTheta=np.cos(self.theta)
-        self.epsilon=np.random.uniform(0,2*np.pi,(len(wavenumbers),len(theta)))
-        self.xLength=int(size[0]/facet)#np.linspace(0, size[0], int(size[0]/facet))
-        self.yLength=int(size[1]/facet)#np.tile(np.linspace(0, size[1], int(size[1]/facet)),int(size[0]/facet)).reshape((-1,1))
-        x=np.linspace(0, size[0], self.xLength)
-        y=np.linspace(0, size[1], self.yLength)
-        self.x, self.y=np.meshgrid(x,y)
-        self.surface=np.zeros((seconds, self.xLength, self.yLength))#[[0 for x in range(int(size[0]/facet))] for y in range(int(size[1]/facet))] 
-        self.omega=np.sqrt(g*self.wavenumbers)
-        self.A=np.sqrt(2*self.spectrum.reshape(-1,1)*self.spreading*self.delta_k.reshape(-1,1)*self.delta_theta)
-        self.seconds=np.linspace(0, seconds-1, seconds, dtype="int")
-    
-    def amplitude(self, i, j):
-        return np.sqrt(2*self.spectrum[i]*self.spreading[j]*self.delta_k*self.delta_theta)
-    
-    def frame(self):
-        print(f"Generating frame 1")
-        for i_index, i in enumerate(self.wavenumbers):
-            for j_index, j in enumerate(self.theta):
-                self.surface[0,:,:]+=self.A[i_index][j_index]*np.cos(i*(self.x*self.cosTheta[j_index]+self.y*self.sinTheta[j_index])-self.epsilon[i_index][j_index])
+from enum import Enum
+from omnidirectional_spectrum import omnidirectional_spectrum, spectrum_model
+from spreading_function import spreading_function, spreading_model
 
-    def video(self):
-        surfaceFrequency=fft2(self.surface[0,:,:])
-        for t in self.seconds[1:]:
-            print(f"Generating frame {t+1}")
-            tmp=surfaceFrequency.copy()
-            for i_index, i in enumerate(self.wavenumbers):
-                tmp*=np.exp(1j*np.sqrt(9.8067*i)*t)
-            self.surface[t,:,:]=ifft2(tmp).real()
+class surfaceGenerator:
+    def __init__(self, length, facet, wind_speed, wind_direction, seconds, timestep, fetch):
+        self.g=9.81
+        self.dx=facet
+        self.L=length
+        self.N=int(self.L/self.dx)
+        self.x=np.linspace(-self.L/2,self.L/2,self.N)
+        self.y=np.linspace(-self.L/2,self.L/2,self.N)
+        self.time=np.linspace(0,seconds, int(seconds/timestep))
+        self.surface=np.zeros((self.time.size, self.N, self.N))
+        self.wind_speed=wind_speed
+        self.wind_direction=wind_direction
+        self.fetch=fetch
+    
+    def generateSurface(self):
+        kx_s = (2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32)
+        ky_s = (2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32)
+        kx, ky = np.meshgrid(kx_s, ky_s)
+        
+        kx_res = kx[0, 1] - kx[0, 0]
+        ky_res = ky[1, 0] - ky[0, 0]
+        
+        k = np.sqrt(kx**2 + ky**2)
+        good_k = np.where(k > np.min(np.array([kx_res, ky_res])) / 2.0)
+        kxn = np.zeros_like(kx, dtype=np.float32)
+        kyn = np.zeros_like(kx, dtype=np.float32)
+        kxn[good_k] = kx[good_k] / k[good_k]
+        kyn[good_k] = ky[good_k] / k[good_k]
+        kinv = np.zeros(k.shape, dtype=np.float32)
+        kinv[good_k] = 1./k[good_k]
+        theta = np.angle(np.exp(1j * (np.arctan2(ky, kx) ))).astype(np.float32)
+        self.omega = np.sqrt(np.float32(self.g) * k)
+        S=omnidirectional_spectrum(spectrum_model.JONSWAP,k,self.wind_speed,F=self.fetch, good_k=good_k).getSpectrum()
+        D=spreading_function(spreading_model.Longuet_Higgins,theta, 8, good_k=good_k).getSpread()
+        wave_dirspec = (kinv) * S * D
+        np.random.seed(13)
+        random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
+        self.wave_coefs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*random_cg).astype(np.complex64)
+
+    def generateTimeSeries(self):
+        for frame, t in enumerate(self.time):
+            wave_coefs_phased=(self.wave_coefs*np.exp(-1j*self.omega*t)).astype(np.complex64)
+            self.surface[frame,:,:]=np.real(np.fft.ifft2(wave_coefs_phased))
 
     def generate(self):
-        self.frame()
-        #self.video()
+        self.generateSurface()
+        self.generateTimeSeries()
+        #self.frameNew()
         return self.surface
