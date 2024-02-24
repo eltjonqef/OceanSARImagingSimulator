@@ -11,9 +11,13 @@ class omnidirectional_spectrum:
     def __init__(self, spectrum, k, v, F=25000, good_k=None):
         self.S=np.zeros(k.shape, dtype=np.float32)
         self.F=F
-        self.k=k[good_k]
+        if good_k:
+            self.k=k[good_k]
+        else:
+            self.k=k
         self.v=v
         self.g=9.81
+        self.good_k=good_k
         self.spectrum=spectrum
         if spectrum==spectrum_model.Pierson_Moskowitz:
             self.S[good_k]=self.pierson_moskowitz()
@@ -26,7 +30,12 @@ class omnidirectional_spectrum:
         return self.S
     
     def plot(self):
-        plt.plot(self.k, self.S,label=f"{self.v} m/s")
+        S=None
+        if self.good_k:
+            S=self.S[self.good_k]
+        else:
+            S=self.S
+        plt.plot(self.k, S,label=f"{self.v} m/s")
         if self.spectrum==spectrum_model.Pierson_Moskowitz:
             plt.title("Pierson Moskowitz")
         elif self.spectrum==spectrum_model.JONSWAP:

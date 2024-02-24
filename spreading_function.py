@@ -9,15 +9,19 @@ class spreading_model(Enum):
     Elfouhaily=2
 
 class spreading_function:
-    def __init__(self, function, theta, n=2, S=8, F=25000, k=None, v=10, good_k=None):
+    def __init__(self, function, theta, n=2, S=8, F=25000, k=0.1, v=10, good_k=None):
         self.D=np.zeros(theta.shape, dtype=np.float32)
-        self.theta=theta[good_k]
+        if good_k:
+            self.theta=theta[good_k]
+        else:
+            self.theta=theta
+        self.k=k
         self.n=n
         self.S=S
         self.F=F
-        self.k=k
         self.v=v
         self.g=9.81
+        self.good_k=good_k
         self.function=function
         if function==spreading_model.Simple_Cosine:
             self.D[good_k]=self.Simple_Cosine()
@@ -30,14 +34,19 @@ class spreading_function:
         return self.D
     
     def plot(self):
+        D=None
+        if self.good_k:
+            D=self.D[self.good_k]
+        else:
+            D=self.D
         if self.function==spreading_model.Simple_Cosine:
-            plt.polar(self.theta, self.D, label=f"n={self.n}")
+            plt.polar(self.theta, D, label=f"n={self.n}")
             plt.title("Simple Cosine")
         elif self.function==spreading_model.Longuet_Higgins:
-            plt.polar(self.theta, self.D, label=f"S={self.n}")
+            plt.polar(self.theta, D, label=f"S={self.n}")
             plt.title("Longuet Higgins")
         elif self.function==spreading_model.Elfouhaily:
-            plt.polar(self.theta, self.D, label=f"{self.v} m/s")
+            plt.polar(self.theta, D, label=f"{self.v} m/s")
             plt.title("Elfouhaily")
         plt.legend()
         plt.grid(True)
