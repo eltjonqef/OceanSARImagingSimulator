@@ -46,6 +46,23 @@ class superImpositionSurfaceGenerator:
                 print(i)
         return self.surface
     
+    def orbital_velocity(self, incidence_angle):
+        u_x=np.zeros((self.time.size, self.N, self.N))
+        u_y=np.zeros((self.time.size, self.N, self.N))
+        u_z=np.zeros((self.time.size, self.N, self.N))
+        for i, k in enumerate(self.wavenumbers):
+            for j, theta in enumerate(self.theta):
+                u_x+=self.A[i][j]/self.omega[i]*k*np.cos(k*(self.x*np.cos(theta+self.wind_direction)+self.y*np.sin(theta+self.wind_direction))+self.epsilon[i][j])*np.cos(theta+self.wind_direction)
+                u_y+=self.A[i][j]/self.omega[i]*k*np.cos(k*(self.x*np.cos(theta+self.wind_direction)+self.y*np.sin(theta+self.wind_direction))+self.epsilon[i][j])*np.sin(theta+self.wind_direction)
+                u_z+=self.A[i][j]/self.omega[i]*k*np.sin(k*(self.x*np.cos(theta+self.wind_direction)+self.y*np.sin(theta+self.wind_direction))+self.epsilon[i][j])
+            print(i)
+
+        u_x=u_x*9.81
+        u_y=u_y*9.81
+        u_z=u_z*9.81
+        u_r=u_z*np.cos(incidence_angle)-np.sin(incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
+        return u_r
+    
     def getSurfaceVariances(self):
         return [np.var(self.surface[frame,:,:]) for frame, _ in enumerate(self.time)]
     

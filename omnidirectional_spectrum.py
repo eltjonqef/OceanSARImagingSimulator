@@ -20,11 +20,11 @@ class omnidirectional_spectrum:
         self.good_k=good_k
         self.spectrum=spectrum
         if spectrum==spectrum_model.Pierson_Moskowitz:
-            self.S[good_k]=self.pierson_moskowitz()
+            self.S=self.pierson_moskowitz()
         elif spectrum==spectrum_model.JONSWAP:
-            self.S[good_k]=self.JONSWAP()
+            self.S=self.JONSWAP()
         elif spectrum==spectrum_model.Elfouhaily:
-            self.S[good_k]=self.Elfouhaily()
+            self.S=self.Elfouhaily()
 
     def getSpectrum(self):
         return self.S

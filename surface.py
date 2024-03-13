@@ -37,18 +37,26 @@ class surfaceGenerator:
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
         
-        self.k = np.sqrt(kx**2 + ky**2)
-        good_k = np.where(self.k > np.min(np.array([kx_res, ky_res])) / 2.0)
+        k_tmp = np.sqrt(kx**2 + ky**2)
+        good_k = np.where(k_tmp > np.min(np.array([kx_res, ky_res])) / 2.0)
+        self.k=np.zeros(k_tmp.shape, dtype=np.float32)
+        self.k[good_k]=k_tmp[good_k]
+        # self.k=k_tmp
+        self.k[self.k==0]=0.000001
         kxn = np.zeros_like(kx, dtype=np.float32)
         kyn = np.zeros_like(kx, dtype=np.float32)
-        kxn[good_k] = kx[good_k] / self.k[good_k]
-        kyn[good_k] = ky[good_k] / self.k[good_k]
+        kxn[good_k] = kx[good_k] #/ self.k[good_k]
+        kyn[good_k] = ky[good_k]#/ self.k[good_k]
+        kx=kxn
+        ky=kyn
         kinv = np.zeros(self.k.shape, dtype=np.float32)
         kinv[good_k] = 1./self.k[good_k]
         self.theta = np.angle(np.exp(1j * (np.arctan2(ky, kx) -self.wind_direction))).astype(np.float32)
         self.omega = np.sqrt(np.float32(self.g) * self.k)
-        self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.k,v=self.wind_speed,F=self.fetch, good_k=good_k)
-        self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=good_k)
+        self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.k,v=self.wind_speed,F=self.fetch, good_k=None)
+        # self.omnidirectional_spectrum.plot()
+        self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
+        # self.spreading_function.plot()
         S=self.omnidirectional_spectrum.getSpectrum()
         D=self.spreading_function.getSpread()
         wave_dirspec = (kinv) * S * D
@@ -79,7 +87,12 @@ class surfaceGenerator:
     def getSlopes(self):
         Sx=np.gradient(self.surface[0,:,:],axis=0).flatten()#[np.gradient(self.surface[frame,:,:],axis=0).flatten() for frame, _ in enumerate(self.time)]
         Sy=np.gradient(self.surface[0,:,:],axis=1).flatten()#[np.gradient(self.surface[frame,:,:],axis=1).flatten() for frame, _ in enumerate(self.time)]
-        return np.var(Sx)+np.var(Sy)
+        return Sx, Sy
+
+    def getSlopesVariance(self):
+        Sx=[np.gradient(self.surface[frame,:,:],axis=1).flatten() for frame, _ in enumerate(self.time)]
+        Sy=[np.gradient(self.surface[frame,:,:],axis=0).flatten() for frame, _ in enumerate(self.time)]
+        return [np.var(Sx[frame])+np.var(Sy[frame]) for frame, _ in enumerate(self.time)]
 
     def getSlopeIntegral(self):
         return np.trapz(np.trapz(np.power(self.KX[0,:],2).reshape(-1,1)*self.PSI,self.KX[0,:], axis=0), self.KY[:,0], axis=0)
