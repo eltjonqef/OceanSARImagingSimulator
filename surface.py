@@ -47,8 +47,8 @@ class surfaceGenerator:
         kyn = np.zeros_like(kx, dtype=np.float32)
         kxn[good_k] = kx[good_k] #/ self.k[good_k]
         kyn[good_k] = ky[good_k]#/ self.k[good_k]
-        kx=kxn
-        ky=kyn
+        # kx=kxn
+        # ky=kyn
         kinv = np.zeros(self.k.shape, dtype=np.float32)
         kinv[good_k] = 1./self.k[good_k]
         self.theta = np.angle(np.exp(1j * (np.arctan2(ky, kx) -self.wind_direction))).astype(np.float32)

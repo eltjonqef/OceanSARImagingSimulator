@@ -35,31 +35,41 @@ if __name__ == "__main__":
     N=256
     seconds=5
     timestep=0.5
-    wind_direction=0
+    wind_speed=18
+    wind_direction=np.pi/2
     monochromatic=monochromaticSurfaceGenerator(length, N, wind_direction, seconds, timestep)
     Z=monochromatic.generate()
-    fig, (ax1, ax2, ax3, ax4)=plt.subplots(1, 4)
+    spatial_resolution=5
+    integration_time=0.66
+    fig, (ax1, ax2, ax3)=plt.subplots(1, 3)
     ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
     ax1.set_title("Wave Field")
-    sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, monochromatic.wavenumbers,  monochromatic.omega, 10, 0, 25000)
+    sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, monochromatic.wavenumbers,  monochromatic.omega, wind_speed, 0, 25000, spatial_resolution, integration_time)
     ax2.imshow(sar.NRCS(), extent=[0,length,0,length], origin='lower')
     ax2.set_title("NRCS")
     ax3.imshow(sar.image(), extent=[0,length,0,length], origin='lower')
     ax3.set_title("SAR Image")
 
-    thetas=np.linspace(0, np.pi/2, 100)
-    sigma0=[(sar.average_NRCS(theta)) for theta in thetas]
-    ax4.plot(np.degrees(thetas), 10*np.log10(sigma0))
-    ax4.set_ylim(-30,60)
-    ax4.set_title("sigma 0")
-    # ax4.plot(Z[0,0,:], label="image")
-    # ax4.plot(sar.NRCS()[0,:], label="NRCS")
+    # thetas=np.linspace(0, np.pi/2, 100)
+    # sigma0=[(sar.average_NRCS(theta)) for theta in thetas]
+    # ax4.plot(np.degrees(thetas), 10*np.log10(sigma0))
+    # ax4.set_ylim(-30,60)
+    # ax4.set_title("sigma 0")
+    fig, (ax4)=plt.subplots(1)
+    ax4.plot(Z[0,0,:], label="Z")
+    ax4.plot(sar.NRCS()[0,:], label="NRCS")
     # tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
     # ax4.plot(tilt[0,:], label="tilt")
     # hydrodynamic=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.hydrodynamic_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
     # ax4.plot(hydrodynamic[0,:], label="hydrodynamic")
     # rb=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.range_bunching_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
     # ax4.plot(rb[0,:], label="range bunching")
-    # ax4.set_title("MTF")
-    # ax4.legend()
+    ax4.plot(sar.image()[0,:], label="Intensity")
+    ax4.set_title("MTF")
+    ax4.legend()
+
+    # fig, (ax5)=plt.subplots(1)
+    # speeds=np.linspace(1, 20, 9)
+    # cts=[sar.coherence_time(speed) for speed in speeds]
+    # ax5.plot(speeds, cts)
     plt.show()

@@ -9,11 +9,13 @@ S=8
 length=512
 N=256
 wind_speed=10
-wind_direction=np.pi/4
+wind_direction=0
 seconds=5
 timestep=0.5
 fetch=25000
 elfouhaily_k=0.1
+spatial_resolution=5
+integration_time=0.66
 #%% Surface Generation
 from surface import surfaceGenerator
 surfaceGenerator=surfaceGenerator(spectrum, spreading, length, N, wind_speed, wind_direction, n, S, seconds, timestep, fetch, elfouhaily_k)
@@ -25,7 +27,7 @@ print(f"Slope Integral {surfaceGenerator.getSlopeIntegral()}")
 print(f"Significant wave height {surfaceGenerator.getSignificantWaveHeights()}")
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging
-sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, surfaceGenerator.k,  surfaceGenerator.omega, wind_speed, wind_direction, fetch)
+sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, surfaceGenerator.k,  surfaceGenerator.omega, wind_speed, wind_direction, fetch, spatial_resolution, integration_time)
 
 fig, (ax1, ax2, ax3)=plt.subplots(1, 3)
 ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
