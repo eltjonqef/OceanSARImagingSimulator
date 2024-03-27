@@ -1,5 +1,6 @@
 import numpy as np
-
+from omnidirectional_spectrum import omnidirectional_spectrum, spectrum_model
+from spreading_function import spreading_function, spreading_model
 class monochromaticSurfaceGenerator:
     def __init__(self, length, N, wind_direction, seconds, timestep):
         self.g=9.81
@@ -15,6 +16,14 @@ class monochromaticSurfaceGenerator:
         self.wavenumbers=np.array([0.5])#np.logspace(-3,5,500)
         self.theta=np.array([0])#np.linspace(0,2*np.pi, 200)
         self.omega=np.sqrt(self.g*self.wavenumbers)
+        self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=spectrum_model.Pierson_Moskowitz,k=self.wavenumbers,v=10,F=None, good_k=None)
+        # self.omnidirectional_spectrum.plot()
+        self.spreading_function=spreading_function(function=spreading_function.Simple_Cosine, theta=self.theta, n=2, S=None, F=None, k=None, v=10, good_k=None)
+        # self.spreading_function.plot()
+        S=self.omnidirectional_spectrum.getSpectrum()
+        D=self.spreading_function.getSpread()
+        self.PSI=S*D
+
     
     def generate(self):
         for frame, t in enumerate(self.time):
@@ -36,19 +45,13 @@ if __name__ == "__main__":
     seconds=5
     timestep=0.5
     wind_speed=18
-    wind_direction=np.pi/2
+    wind_direction=0
     monochromatic=monochromaticSurfaceGenerator(length, N, wind_direction, seconds, timestep)
     Z=monochromatic.generate()
     spatial_resolution=5
     integration_time=0.66
-    fig, (ax1, ax2, ax3)=plt.subplots(1, 3)
-    ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
-    ax1.set_title("Wave Field")
     sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, monochromatic.wavenumbers,  monochromatic.omega, wind_speed, 0, 25000, spatial_resolution, integration_time)
-    ax2.imshow(sar.NRCS(), extent=[0,length,0,length], origin='lower')
-    ax2.set_title("NRCS")
-    ax3.imshow(sar.image(), extent=[0,length,0,length], origin='lower')
-    ax3.set_title("SAR Image")
+
 
     # thetas=np.linspace(0, np.pi/2, 100)
     # sigma0=[(sar.average_NRCS(theta)) for theta in thetas]
@@ -68,6 +71,24 @@ if __name__ == "__main__":
     ax4.set_title("MTF")
     ax4.legend()
 
+    fig1, (ax1, ax2, ax3)=plt.subplots(1,3)
+    ax1.imshow(sar.surface, extent=[0,length,0,length], origin='lower')
+    ax1.set_title("Wave Field")
+    ax2.imshow(sar.image(), extent=[0,length,0,length], origin='lower')
+    ax2.set_title("SAR Image")
+    ax3.imshow(sar.noisy_image(), extent=[0,length,0,length], origin='lower')
+    ax3.set_title("Noisy SAR Image")
+    fig2, ((ax5,ax6), (ax7, ax8))=plt.subplots(2, 2)
+    aaa=abs(np.fft.fftshift(monochromatic.PSI))
+    print(aaa)
+    ax5.plot(abs(np.fft.fftshift(monochromatic.PSI)))
+    ax5.set_title("Original Spectrum")
+    ax6.plot(abs(np.fft.fftshift(np.fft.fft2(sar.surface))))
+    ax6.set_title("Sea surface Spectrum")
+    ax7.plot(abs(np.fft.fftshift(np.fft.fft2(sar.I))))
+    ax7.set_title("SAR Spectrum")
+    ax8.plot(abs(sar.wave_field()))
+    ax8.set_title("Inverse SAR")
     # fig, (ax5)=plt.subplots(1)
     # speeds=np.linspace(1, 20, 9)
     # cts=[sar.coherence_time(speed) for speed in speeds]

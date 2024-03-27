@@ -43,6 +43,7 @@ class SAR_imaging:
         self.wavelength=self.light_speed/self.frequency
         self.k_e=2*np.pi/(self.light_speed/self.frequency)
         self.band=Band.C
+        self.I=np.zeros((self.N,self.N))
         if self.band==Band.X:
             self.dielectric_constant=49-35.5j
         elif self.band==Band.C:
@@ -51,15 +52,14 @@ class SAR_imaging:
             self.dielectric_constant=72-59j
 
     def image(self):
-        I=np.zeros((self.N,self.N))
         x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
         sigma=self.NRCS()
         Ur=self.orbital_velocity()
         pa=self.degraded_azimuthal_resolution()
         for i in range(self.N):
             for j in range(self.N):
-                I[i, j]=np.trapz(sigma[i,:]/pa*np.exp(-np.pi**2*((x[i,j]-x[i,:]-self.beta*Ur[i,:])/pa)**2), dx=self.dx*self.dx)
-        return I
+                self.I[i, j]=np.pi*self.integration_time**2*self.azimuth_resolution()/2*np.trapz(sigma[i,:]/pa*np.exp(-np.pi**2*((x[i,j]-x[i,:]-self.beta*Ur[i,:])/pa)**2), dx=self.dx*self.dx)
+        return self.I
     
     def average_NRCS(self, theta=None):
         if theta is None:
@@ -100,20 +100,20 @@ class SAR_imaging:
     def orbital_velocity_mtf(self):
         return self.dispersion_relation*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)+1j*np.cos(self.incidence_angle))
     
-
     def orbital_velocity(self):
         return 2*np.real(np.fft.ifft2(np.fft.ifftshift(self.orbital_velocity_mtf()*np.fft.fftshift(np.fft.fft2(self.surface)))))
     
     def orbital_acceleration_mtf(self):
         return self.dispersion_relation**2*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)+1j*np.cos(self.incidence_angle))
 
-
     def RAR_MTF(self):
         return self.tilt_mtf()+self.hydrodynamic_mtf()+self.range_bunching_mtf()
     
+    def SAR_MTF(self):
+        return self.RAR_MTF()+self.velocity_bunching_mtf()
+    
     def coherence_time(self):
         wind_speed_19_5=self.wind_speed*(19.5/10)**(1/7)
-        print(wind_speed_19_5)
         return 3*self.wavelength/wind_speed_19_5*special.erf(2.7*self.spatial_resolution/wind_speed_19_5**2)**(-1/2)
     
     def azimuth_resolution(self):
@@ -126,4 +126,11 @@ class SAR_imaging:
         # print(self.coherence_time())
         return self.azimuth_resolution()*np.sqrt(1+(self.coherence_time()/self.integration_time)**2)
         # return self.azimuth_resolution()*np.sqrt(1+(self.integration_time/self.coherence_time())**2)
+    
+    def wave_field(self):
+        return 2*np.abs(self.SAR_MTF())**2*np.fft.fftshift(np.fft.fft2(self.I))
+        return np.abs(np.fft.fftshift(np.fft.fft2(self.surface))) #1/2*np.real(2*np.abs(self.SAR_MTF())**2*np.fft.fftshift(np.fft.fft2(self.I)))
 
+    def noisy_image(self):
+        noise=np.random.exponential(scale=1,size=(self.N, self.N))
+        return self.I*noise
