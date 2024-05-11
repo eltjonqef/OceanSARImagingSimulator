@@ -33,7 +33,7 @@ class spreading_function:
     def getSpread(self):
         return self.D
     
-    def plot(self):
+    def plot(self, filename):
         D=None
         if self.good_k:
             D=self.D[self.good_k]
@@ -43,19 +43,31 @@ class spreading_function:
             plt.polar(self.theta, D, label=f"n={self.n}")
             plt.title("Simple Cosine")
         elif self.function==spreading_model.Longuet_Higgins:
-            plt.polar(self.theta, D, label=f"S={self.n}")
+            plt.polar(self.theta, D, label=f"S={self.S}")
             plt.title("Longuet Higgins")
         elif self.function==spreading_model.Elfouhaily:
-            plt.polar(self.theta, D, label=f"{self.v} m/s")
+            if self.k==202.68:
+                label="X-band"
+            elif self.k==110.23:
+                label="C-band"
+            elif self.k==26.73:
+                label="L-band"
+            else:
+                label=f"k={self.k} rad/m"
+            plt.polar(self.theta, D, label=label)
             plt.title("Elfouhaily")
         plt.legend()
         plt.grid(True)
+        plt.savefig(filename)
 
     def Simple_Cosine(self):
-        return 2/np.pi*np.power(np.cos(self.theta),self.n) 
+        f=2/np.pi*np.power(np.cos(self.theta),self.n) 
+        mask=(np.abs(self.theta)>np.pi/2) & (np.abs(self.theta)<3*np.pi/2)
+        f[mask]=0
+        return f
 
     def Longuet_Higgins(self):
-        return (gamma(self.S+1)/(gamma(self.S+0.5)*2*np.sqrt(np.pi)))*np.power(np.cos((self.theta)/2),2*self.S)
+        return (gamma(self.S+1)/(gamma(self.S+0.5)*2*np.sqrt(np.pi)))*np.cos(self.theta/2)**(2*self.S)
 
     def Elfouhaily(self):
         a_0=np.log(2)/4

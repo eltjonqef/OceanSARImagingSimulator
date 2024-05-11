@@ -29,46 +29,67 @@ class surfaceGenerator:
         
     
     def generateSurface(self):
-        kx_s = (2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32)
-        ky_s = (2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32)
+        kx_s = np.fft.fftshift((2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32))
+        ky_s = np.fft.fftshift((2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32))
         kx, ky = np.meshgrid(kx_s, ky_s)
-        self.KX=kx
-        self.KY=ky
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
+        # if self.monochromatic:
+        MONOCHROMATIC=False
+        if MONOCHROMATIC:
+            # self.K[150,129]=k_tmp[128,160]
+            x=150
+            y=255
+            tmp=kx[x,y]
+            kx=np.zeros((self.N,self.N))
+            ky=np.zeros((self.N,self.N))
+            kx[x,y]=tmp
+            ky[x,y]=tmp
+
+        self.KX=kx
+        self.KY=ky
         
         k_tmp = np.sqrt(kx**2 + ky**2)
         good_k = np.where(k_tmp > np.min(np.array([kx_res, ky_res])) / 2.0)
-        self.k=np.zeros(k_tmp.shape, dtype=np.float32)
-        self.k[good_k]=k_tmp[good_k]
-        # self.k=k_tmp
-        self.k[self.k==0]=0.000001
+        self.K=np.zeros(k_tmp.shape, dtype=np.float32)
+        self.K[good_k]=k_tmp[good_k]
+        # self.K=k_tmp
+        # self.K[self.K==0]=0.000000000001#np.finfo(float).tiny
         kxn = np.zeros_like(kx, dtype=np.float32)
         kyn = np.zeros_like(kx, dtype=np.float32)
-        kxn[good_k] = kx[good_k] #/ self.k[good_k]
-        kyn[good_k] = ky[good_k]#/ self.k[good_k]
+        kxn[good_k] = kx[good_k] #/ self.K[good_k]
+        kyn[good_k] = ky[good_k]#/ self.K[good_k]
         # kx=kxn
         # ky=kyn
-        kinv = np.zeros(self.k.shape, dtype=np.float32)
-        kinv[good_k] = 1./self.k[good_k]
+        kinv = np.zeros(self.K.shape, dtype=np.float32)
+        kinv[good_k] = 1./self.K[good_k]
         self.theta = np.angle(np.exp(1j * (np.arctan2(ky, kx) -self.wind_direction))).astype(np.float32)
-        self.omega = np.sqrt(np.float32(self.g) * self.k)
-        self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.k,v=self.wind_speed,F=self.fetch, good_k=None)
+        # import matplotlib.pyplot as plt
+        # plt.plot(self.theta)
+        # plt.show()
+        self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.K,v=self.wind_speed,F=self.fetch, good_k=None)
         # self.omnidirectional_spectrum.plot()
         self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
         # self.spreading_function.plot()
         S=self.omnidirectional_spectrum.getSpectrum()
+        # S[150,150]=500
+        S[np.isnan(S)]=0
+        self.KX[self.KX==0]=0.00000001
+        self.KY[self.KY==0]=0.00000001
+        self.K[self.K==0]=0.00000001
+        self.omega = np.sqrt(np.float32(self.g) * self.K)
         D=self.spreading_function.getSpread()
         wave_dirspec = (kinv) * S * D
         self.PSI=kinv*S*D
 
-        random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
-        self.wave_coefs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*random_cg).astype(np.complex64)
+        self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
+        self.wave_coeffs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*self.random_cg).astype(np.complex64)
 
     def generateTimeSeries(self):
         for frame, t in enumerate(self.time):
-            wave_coefs_phased=(self.wave_coefs*np.exp(-1j*self.omega*t)).astype(np.complex64)
-            self.surface[frame,:,:]=np.real(np.fft.ifft2(wave_coefs_phased))
+            wave_coefs_phased=(self.wave_coeffs*np.exp(-1j*self.omega*t)).astype(np.complex64)
+            self.surface[frame,:,:]=np.real(np.fft.ifft2(np.fft.ifftshift(wave_coefs_phased)))
+        
 
     
     def generate(self):

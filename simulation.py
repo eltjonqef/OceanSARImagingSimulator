@@ -2,24 +2,29 @@ import matplotlib.pyplot as plt
 from omnidirectional_spectrum import spectrum_model
 from spreading_function import spreading_model
 import numpy as np
-spectrum=spectrum_model.Pierson_Moskowitz
+from plots import plotMTFs, animate, plotModulations, plotSpectras
+spectrum=spectrum_model.JONSWAP
 spreading=spreading_model.Simple_Cosine
+
+    
+
 n=6
 S=8
 length=512
-N=256
-wind_speed=10
-wind_direction=np.pi/6
+N=128
+wind_speed=7
+wind_direction=np.pi/2
 seconds=5
 timestep=0.5
 fetch=25000
 elfouhaily_k=0.1
 spatial_resolution=5
-integration_time=0.66
+integration_time=0.5
 #%% Surface Generation
 from surface import surfaceGenerator
 surfaceGenerator=surfaceGenerator(spectrum, spreading, length, N, wind_speed, wind_direction, n, S, seconds, timestep, fetch, elfouhaily_k)
 Z=surfaceGenerator.generate()
+animate(Z)
 print(f"Surface Variances {surfaceGenerator.getSurfaceVariances()}")
 print(f"Spectrum Integral {surfaceGenerator.getSpectrumIntegral()}")
 print(f"Slope Variances {surfaceGenerator.getSlopesVariance()}")
@@ -27,26 +32,57 @@ print(f"Slope Integral {surfaceGenerator.getSlopeIntegral()}")
 print(f"Significant wave height {surfaceGenerator.getSignificantWaveHeights()}")
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging
-sar=SAR_imaging(Z[0,:,:], length, N,spectrum_model.Pierson_Moskowitz, np.pi/6, surfaceGenerator.k,  surfaceGenerator.omega, wind_speed, wind_direction, fetch, spatial_resolution, integration_time)
+sar=SAR_imaging(surfaceGenerator, length, N,spectrum_model.Pierson_Moskowitz, np.deg2rad(23.5), wind_speed, wind_direction, fetch, spatial_resolution, integration_time)
+sar.generate()
+plotMTFs(sar)
+plotModulations(sar)
+plotSpectras(sar)
+fig, (axSurface,axSurfaceSu)=plt.subplots(1,2)
+axSurface.imshow(sar.surface, origin='lower')
+axSurfaceSu.imshow(sar.I, origin='lower')
+print(f"mtf max {np.max(sar.tilt_mtf())}")
+fig1, (ax1)=plt.subplots(1)
+ax1.plot((sar.v_covariance())[N//2,:],label="middle row")
+ax1.plot((sar.v_covariance())[:,N//2],label="middle row")
+# ax1.plot(sar.v_covariance()[:,128],label="middle column")
+# ax1.set_ylim([-1,1])
+print(f"theoretical {np.trapz(np.trapz(sar.dispersion_relation*sar.PSI,sar.kx[0,:], axis=0), sar.ky[:,0], axis=0)}, covaraince {sar.v_covariance()[N//2,N//2]}")
+plt.legend()
+# ovColorbar=axOV.imshow(sar.u_r, origin='lower')
+# plt.colorbar(ovColorbar, ax=axOV)
+# ovSumColorbar=axOVsum.imshow(sar.u_r_sum, origin='lower')
+# plt.colorbar(ovSumColorbar, ax=axOVsum)
+# print(f"{np.var(sar.surface)} {np.var(sar.hta)} {np.var(sar.u_r)} {np.var(sar.u_r_sum)}")
+# figTilt, (axSurface, axTilt, axGrad)=plt.subplots(1,3)
+# axSurface.imshow(Z[0,:,:], origin='lower')
+# tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
+# axTilt.imshow(tilt, origin='lower')
+# axGrad.imshow(np.gradient(Z[0,:,:],axis=1), origin='lower')
+# # plt.plot(abs(sar.velocity_bunching_mtf()))
+# plt.legend()
+# plt.plot(np.real(np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))[:,0],label='Tilt')
+# plt.plot(sar.surface[:,0],label='Surface')
+# plt.legend()
+# plt.show()
+# fig1, (ax1, ax2, ax3)=plt.subplots(1,3)
+# ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
+# ax1.set_title("Wave Field")
+# ax2.imshow(sar.image(), extent=[0,length,0,length], origin='lower')
+# ax2.set_title("SAR Image")
+# ax3.imshow(sar.noisy_image(), extent=[0,length,0,length], origin='lower')
+# ax3.set_title("Noisy SAR Image")
 
-fig1, (ax1, ax2, ax3)=plt.subplots(1,3)
-ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
-ax1.set_title("Wave Field")
-ax2.imshow(sar.image(), extent=[0,length,0,length], origin='lower')
-ax2.set_title("SAR Image")
-ax3.imshow(sar.noisy_image(), extent=[0,length,0,length], origin='lower')
-ax3.set_title("Noisy SAR Image")
+# fig2, ((ax3,ax4), (ax5, ax6))=plt.subplots(2, 2)
 
-fig2, ((ax3,ax4), (ax5, ax6))=plt.subplots(2, 2)
-
-ax3.contour(abs(np.fft.fftshift(surfaceGenerator.PSI)), extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
-ax3.set_title("Original Spectrum")
-ax4.contour(abs(np.fft.fftshift(np.fft.fft2(sar.surface))), extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
-ax4.set_title("Sea surface Spectrum")
-ax5.contour(abs(np.fft.fftshift(np.fft.fft2(sar.I))), extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
-ax5.set_title("SAR Spectrum")
-ax6.contour(abs(sar.wave_field()), extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
-ax6.set_title("Inverse SAR")
+# ax3.contour(sar.kx, sar.ky, abs(surfaceGenerator.PSI))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
+# ax3.set_title("Original Spectrum")
+# ax4.contour(sar.kx, sar.ky,abs(np.fft.fftshift(np.fft.fft2(sar.surface))))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
+# ax4.set_title("Sea surface Spectrum")
+# print(f"min {np.min(sar.I)} {np.mean(sar.I)} {np.max(sar.I)}")
+# ax5.contour(sar.kx, sar.ky,abs(np.fft.fftshift(np.fft.fft2(sar.I-np.mean(sar.I)))))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
+# ax5.set_title("SAR Spectrum")
+# ax6.contour(sar.kx, sar.ky,abs(sar.wave_field()))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
+# ax6.set_title("Inverse SAR")
 # ax4.plot(Z[0,0,:], label="image")
 # ax4.plot(sar.NRCS()[0,:], label="NRCS")
 # tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))

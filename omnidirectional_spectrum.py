@@ -29,7 +29,7 @@ class omnidirectional_spectrum:
     def getSpectrum(self):
         return self.S
     
-    def plot(self):
+    def plot(self, filename, xlims):
         S=None
         if self.good_k:
             S=self.S[self.good_k]
@@ -45,10 +45,13 @@ class omnidirectional_spectrum:
         plt.xscale('log')
         plt.yscale('log')
         plt.ylim(1e-15, 1e3)
+        plt.xlim(xlims[0],xlims[1])
+        # plt.xlim(1e-3,1e5)
         plt.xlabel('Wavenumber [rad/m]')
-        plt.ylabel('Elevation Spectrum [m²/rad/m]')
+        plt.ylabel('Elevation Spectrum [m³/rad]')
         plt.legend()
         plt.grid(True)
+        plt.savefig(filename)
 
     def pierson_moskowitz(self):
         a=0.0081
@@ -60,19 +63,22 @@ class omnidirectional_spectrum:
     def JONSWAP(self):
         gamma=3.3
         a=0.076*(self.v**2/(self.F*self.g))**0.22
-        k_p=(7*np.pi*(self.g/(self.v*np.sqrt(self.g)))*np.power(self.v**2/(self.g*self.F),0.33))**2
-        k_pIndex=np.searchsorted(self.k, k_p)
-        k_low=self.k[:k_pIndex]
-        k_high=self.k[k_pIndex:]
-        sigma_low=0.07
-        sigma_high=0.09
-        S_low=np.array([])
-        S_high=np.array([])
-        if np.size(k_low):
-            S_low=a/2*np.power(k_low,-3)*np.exp(-1.25*np.power(k_low/k_p,-2))*np.exp(np.log(gamma)*np.exp(-np.power(np.sqrt(k_low/k_p)-1,2)/(2*np.power(sigma_low,2))))
-        if np.size(k_high):
-            S_high=a/2*np.power(k_high,-3)*np.exp(-1.25*np.power(k_high/k_p,-2))*np.exp(np.log(gamma)*np.exp(-np.power(np.sqrt(k_high/k_p)-1,2)/(2*np.power(sigma_high,2))))    
-        return np.concatenate((S_low, S_high))
+        k_p=(7*np.pi*(self.g/(self.v*np.sqrt(self.g)))*(self.v**2/(self.g*self.F))**0.33)**2
+        # k_pIndex=np.searchsorted(self.k, k_p)
+        # k_low=self.k[:k_pIndex]
+        # k_high=self.k[k_pIndex:]
+        # sigma_low=0.07
+        # sigma_high=0.09
+        # S_low=np.array([])
+        # S_high=np.array([])
+        # if np.size(k_low):
+        #     S_low=a/2*np.power(k_low,-3)*np.exp(-1.25*np.power(k_low/k_p,-2))*np.exp(np.log(gamma)*np.exp(-np.power(np.sqrt(k_low/k_p)-1,2)/(2*np.power(sigma_low,2))))
+        # if np.size(k_high):
+        #     S_high=a/2*np.power(k_high,-3)*np.exp(-1.25*np.power(k_high/k_p,-2))*np.exp(np.log(gamma)*np.exp(-np.power(np.sqrt(k_high/k_p)-1,2)/(2*np.power(sigma_high,2))))    
+        # return np.concatenate((S_low, S_high))
+        sigma=np.where(self.k>k_p, 0.09, 0.07)
+        return a/2*self.k**(-3)*np.exp(-1.25*(self.k/k_p)**(-2))*np.exp(np.log(gamma)*np.exp(-(np.sqrt(self.k/k_p)-1)**2/(2*sigma**2)))
+        
 
     def lower(self):
         k_0=self.g/self.v**2

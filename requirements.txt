@@ -1,0 +1,7 @@
+numpy
+matplotlib
+ipykernel
+scipy
+# only for KDE
+PyQt5
+PyQt6
