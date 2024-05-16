@@ -25,6 +25,11 @@ class monochromaticSurfaceGenerator:
         S=self.omnidirectional_spectrum.getSpectrum()
         D=self.spreading_function.getSpread()
         self.PSI=np.sqrt(S)#*D
+        self.random_phase=1
+        self.wave_coeffs=1
+        # self.KY=self.KY#*np.sin(np.linspace(0,2*np.pi,self.N))
+        # self.KX=self.KY*np.cos(np.linspace(0,2*np.pi,self.N))
+
         print(self.PSI)
 
     
@@ -48,7 +53,7 @@ if __name__ == "__main__":
     seconds=5
     timestep=0.5
     wind_speed=6
-    wind_direction=np.pi/2
+    wind_direction=0#np.pi/2
     monochromatic=monochromaticSurfaceGenerator(length, N, wind_direction, seconds, timestep)
     Z=monochromatic.generate()
     # plt.imshow(Z[0,:,:],origin='lower')
@@ -61,6 +66,11 @@ if __name__ == "__main__":
     plt.plot(np.real(np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))[:,0], label="Tilt")
     # plt.colorbar()
     plt.legend()
+    fig, (ax4)=plt.subplots(1)
+    ax4.plot(Z[0,0,:], label="Z")
+    # ax4.plot(sar.NRCS()[0,:], label="NRCS")
+    tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
+    ax4.plot(tilt[0,:], label="tilt")
     plt.show()
     fig1, (ax1, ax2, ax3)=plt.subplots(1,3)
     ax1.imshow(Z[0,:,:], extent=[0,length,0,length], origin='lower')
@@ -81,11 +91,6 @@ if __name__ == "__main__":
     # ax4.plot(np.degrees(thetas), 10*np.log10(sigma0))
     # ax4.set_ylim(-30,60)
     # ax4.set_title("sigma 0")
-    # fig, (ax4)=plt.subplots(1)
-    # ax4.plot(Z[0,0,:], label="Z")
-    # ax4.plot(sar.NRCS()[0,:], label="NRCS")
-    # # tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
-    # # ax4.plot(tilt[0,:], label="tilt")
     # # hydrodynamic=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.hydrodynamic_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
     # # ax4.plot(hydrodynamic[0,:], label="hydrodynamic")
     # # rb=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.range_bunching_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))

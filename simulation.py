@@ -18,7 +18,7 @@ seconds=5
 timestep=0.5
 fetch=25000
 elfouhaily_k=0.1
-spatial_resolution=5
+spatial_resolution=2
 integration_time=0.5
 #%% Surface Generation
 from surface import surfaceGenerator
@@ -32,7 +32,7 @@ print(f"Slope Integral {surfaceGenerator.getSlopeIntegral()}")
 print(f"Significant wave height {surfaceGenerator.getSignificantWaveHeights()}")
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging
-sar=SAR_imaging(surfaceGenerator, length, N,spectrum_model.Pierson_Moskowitz, np.deg2rad(23.5), wind_speed, wind_direction, fetch, spatial_resolution, integration_time)
+sar=SAR_imaging(surfaceGenerator, length, N,spectrum_model.Pierson_Moskowitz, np.deg2rad(35), wind_speed, wind_direction, fetch, spatial_resolution, integration_time)
 sar.generate()
 plotMTFs(sar)
 plotModulations(sar)

@@ -79,6 +79,22 @@ def plotMTFs(sar):
     axRarPhase.set_xlabel("Azimuth Wavenumber")
     axRarPhase.set_ylabel("Range Wavenumber")
 
+    fig4, (axSARAbs, axSARPhase)=plt.subplots(1,2)
+    # axSARAbs.plot(sar.tilt_mtf())
+    axRARAbsPlot=axSARAbs.pcolor(sar.kx, sar.ky, abs(sar.SAR_MTF()), cmap='gist_gray')
+    absContourSAR=axSARAbs.contour(sar.kx, sar.ky, abs(sar.SAR_MTF()),20, colors='w')
+    plt.colorbar(axRARAbsPlot, ax=axSARAbs)
+    axSARAbs.clabel(absContourSAR, absContourSAR.levels, inline=True, fontsize=10)
+    axSARAbs.set_title("RAR MTF")
+    axSARAbs.set_xlabel("Azimuth Wavenumber")
+    axSARAbs.set_ylabel("Range Wavenumber")
+    axsarPhasePlot=axSARPhase.pcolor(sar.kx, sar.ky, abs(np.angle(sar.SAR_MTF())), cmap='gist_gray')
+    phaseContourSAR=axSARPhase.contour(sar.kx, sar.ky, np.rad2deg(abs(np.angle(sar.SAR_MTF()))), 20, colors='w')
+    plt.colorbar(axsarPhasePlot, ax=axSARPhase)
+    axSARPhase.clabel(phaseContourSAR, phaseContourSAR.levels, inline=True, fontsize=10)
+    axSARPhase.set_title("RAR MTF")
+    axSARPhase.set_xlabel("Azimuth Wavenumber")
+    axSARPhase.set_ylabel("Range Wavenumber")
 
     # fig4, (sigmaPLot)=plt.subplots(1,1)
     # sigmaPLot.plot((sar.v_covariance(0)[128,:]))
@@ -132,6 +148,9 @@ def plotSpectras(sar):
     ax5.contour(sar.kx, sar.ky,abs(sar.inverse_quasilinear_transform()))
     ax5.set_title("Quasi Linear Inverse SAR")
     ax6.set_title("Non Linear Inverse SAR")
+
+    fig1,(ax11)=plt.subplots(1)
+    ax11.contour(sar.kx, sar.ky, abs(sar.inverse_quasilinear_transformRAR()))
 
 def plotSurfaceSAR(sar):
     fig, (axSurface,axSurfaceSu)=plt.subplots(1,2)

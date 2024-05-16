@@ -22,7 +22,7 @@ class SAR_imaging:
         self.H=693000
         self.V=7400
         self.R=self.H/np.cos(incidence_angle)
-        self.beta=100#self.R/self.V
+        self.beta=70#self.R/self.V
         self.spatial_resolution=spatial_resolution
         print(self.beta)
         self.L=length
@@ -112,12 +112,13 @@ class SAR_imaging:
         return -1j*self.ky/np.tan(self.incidence_angle)
 
     def velocity_bunching_mtf(self):
-        return 1j*self.R/self.V*self.kx*self.dispersion_relation*(np.sin(self.incidence_angle)*np.cos(self.wind_direction)+1j*np.cos(self.incidence_angle))
+        print(f"kx {np.max(self.beta*self.kx)}")
+        return -1j*self.beta*self.kx*self.orbital_velocity_mtf()#*self.dispersion_relation*(np.sin(self.incidence_angle)*np.cos(self.wind_direction)+1j*np.cos(self.incidence_angle))
     
     def orbital_velocity_mtf(self, negative=False):
         if negative:
             return -self.dispersion_relation*(self.kx/-self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
-        return -self.dispersion_relation*(self.kx/self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
+        return self.dispersion_relation*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)*1j-np.cos(self.incidence_angle))
     
     def orbital_velocity(self):
         self.u_r=np.real(np.fft.ifft2(np.fft.ifftshift(self.orbital_velocity_mtf()*np.fft.fftshift(np.fft.fft2(self.surface)))))
@@ -164,7 +165,7 @@ class SAR_imaging:
         return self.tilt_mtf()+self.hydrodynamic_mtf()+self.range_bunching_mtf()
     
     def SAR_MTF(self):
-        return self.RAR_MTF()+self.velocity_bunching_mtf()
+        return self.RAR_MTF()+self.velocity_bunching_mtf()#*0.01
     
 
     def coherence_time(self):
@@ -211,7 +212,10 @@ class SAR_imaging:
         return 1/2*np.trapz(np.trapz((self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI+np.conj(self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI))*np.exp(1j*self.wavenumbers*x),self.wavenumbers[0,:], axis=0),self.wavenumbers[:,0])
 
     def inverse_linear_transform(self):
-        return 0.5*(abs(self.SAR_MTF())**2*self.PSI+(abs(self.SAR_MTF())**2*np.rot90(self.PSI,2)))
+        return 0.5*(abs(self.SAR_MTF())**2*self.PSI+(abs(np.rot90(self.SAR_MTF(),2))**2*np.rot90(self.PSI,2)))
+    
+    def inverse_linear_transformRAR(self):
+        return 0.5*(abs(self.RAR_MTF())**2*self.PSI+(abs(np.rot90(self.RAR_MTF(),2))**2*np.rot90(self.PSI,2)))
 
     def inverse_quasilinear_transform(self):
         # i think i might be omiting the imag part
@@ -219,6 +223,13 @@ class SAR_imaging:
         x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
         print(f"ql coeff {self.beta**2}")
         return np.exp(-self.kx**2*self.beta**2*np.var(self.u_r))*self.inverse_linear_transform()
+    
+    def inverse_quasilinear_transformRAR(self):
+        # i think i might be omiting the imag part
+        # print(f"rho0 {self.v_covariance(0)}")
+        x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
+        print(f"ql coeff {self.beta**2}")
+        return np.exp(-self.kx**2*self.beta**2*np.var(self.u_r))*self.inverse_linear_transformRAR()
 
     def inverse_nonlinear_transform(self):
         x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
