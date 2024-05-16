@@ -3,7 +3,7 @@ import numpy as np
 def plotMTFs(sar):
     # fig1, ((axTilt, axHydrodynamic, axRB, axVB), (axTiltPhase, axHydrodynamicPhase, axRBPhase, axVBPhase))=plt.subplots(2,4)
     fig1, ((axTilt, axHydrodynamic), (axRB, axVB))=plt.subplots(2,2)
-    axTilt.pcolor(sar.kx, sar.ky, abs(sar.tilt_mtf()))
+    axTilt.pcolor(sar.kx, sar.ky, abs(sar.tilt_mtf()), cmap='viridis')
     axTiltContour=axTilt.contour(sar.kx, sar.ky, abs(sar.tilt_mtf()), colors='w')
     axTilt.clabel(axTiltContour, axTiltContour.levels, inline=True, fontsize=10)
     axTilt.set_title("Tilt MTF")
@@ -50,7 +50,8 @@ def plotMTFs(sar):
 
     fig2, (axOrbitalMTF, axOrbital)=plt.subplots(1,2)
     axOrbitalMTF.pcolor(sar.kx, sar.ky, abs(sar.orbital_velocity_mtf()), cmap='gist_gray')
-    axOrbitalMTF.contour(sar.kx, sar.ky, abs(sar.orbital_velocity_mtf()), colors='w')
+    axOVContour=axOrbitalMTF.contour(sar.kx, sar.ky, abs(sar.orbital_velocity_mtf()), colors='w')
+    axOrbitalMTF.clabel(axOVContour, axOVContour.levels, inline=True, fontsize=10)
     axOrbitalMTF.set_title("Orbital Velocity MTF")
     axOrbitalMTF.set_xlabel("Azimuth Wavenumber")
     axOrbitalMTF.set_ylabel("Range Wavenumber")
@@ -88,15 +89,15 @@ def plotMTFs(sar):
 def plotModulations(sar):
     fig, (ax)=plt.subplots(1)
     ax.plot(sar.surface[:,sar.N-1], label="surface")
-    # ax.plot(sar.NRCS()[0,:], label="NRCS")
+    # ax.plot(sar.NRCS()[:,sar.N-1], label="NRCS")
     tilt=np.real(np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
     ax.plot(tilt[:,sar.N-1], label="tilt")
-    hydrodynamic=np.real(np.fft.ifft2(np.fft.ifftshift(sar.hydrodynamic_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
-    ax.plot(hydrodynamic[:,sar.N-1], label="hydrodynamic")
-    rb=np.real(np.fft.ifft2(np.fft.ifftshift(sar.range_bunching_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
-    ax.plot(rb[:,sar.N-1], label="range bunching")
+    # hydrodynamic=np.real(np.fft.ifft2(np.fft.ifftshift(sar.hydrodynamic_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
+    # ax.plot(hydrodynamic[:,sar.N-1], label="hydrodynamic")
+    # rb=np.real(np.fft.ifft2(np.fft.ifftshift(sar.range_bunching_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
+    # ax.plot(rb[:,sar.N-1], label="range bunching")
     # vb=np.real(np.fft.ifft2(np.fft.ifftshift(sar.velocity_bunching_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
-    # ax.plot(vb[:,255], label="velocity bunching")
+    # ax.plot(vb[:,sar.N-1], label="velocity bunching")
     plt.legend()
 
 def animate(Z):
@@ -118,7 +119,7 @@ def animate(Z):
     plt.show()
 
 def plotSpectras(sar):
-    fig, ((ax1,ax2), (ax3, ax4))=plt.subplots(2, 2)
+    fig, ((ax1,ax2, ax3), (ax4, ax5, ax6))=plt.subplots(2, 3)
 
     ax1.contour(sar.kx, sar.ky, abs(sar.PSI))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
     ax1.set_title("Original Spectrum")
@@ -126,5 +127,13 @@ def plotSpectras(sar):
     ax2.set_title("Sea surface Spectrum")
     ax3.contour(sar.kx, sar.ky,abs(np.fft.fftshift(np.fft.fft2(sar.I-np.mean(sar.I)))))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
     ax3.set_title("SAR Spectrum")
-    ax4.contour(sar.kx, sar.ky,abs(sar.wave_field()))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
-    ax4.set_title("Inverse SAR")
+    ax4.contour(sar.kx, sar.ky,abs(sar.inverse_linear_transform()))#, extent=(sar.kx.min(),sar.kx.max(),sar.ky.min(),sar.ky.max()))
+    ax4.set_title("Linear Inverse SAR")
+    ax5.contour(sar.kx, sar.ky,abs(sar.inverse_quasilinear_transform()))
+    ax5.set_title("Quasi Linear Inverse SAR")
+    ax6.set_title("Non Linear Inverse SAR")
+
+def plotSurfaceSAR(sar):
+    fig, (axSurface,axSurfaceSu)=plt.subplots(1,2)
+    axSurface.imshow(sar.surface, origin='lower')
+    axSurfaceSu.imshow(sar.I, origin='lower')

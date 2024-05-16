@@ -15,14 +15,14 @@ class Band(Enum):
 
 class SAR_imaging:
     def __init__(self, surfaceGenerator, length, N, spectrum, incidence_angle, wind_speed, wind_direction, fetch, spatial_resolution, integration_time):
-        self.random_phase=np.angle(surfaceGenerator.random_cg)
+        self.random_phase=surfaceGenerator.random_phase
         self.PSI=surfaceGenerator.PSI
         self.wave_coeffs=surfaceGenerator.wave_coeffs
         self.polarization=Polarization.Vertical
         self.H=693000
         self.V=7400
         self.R=self.H/np.cos(incidence_angle)
-        self.beta=10#self.R/self.V
+        self.beta=100#self.R/self.V
         self.spatial_resolution=spatial_resolution
         print(self.beta)
         self.L=length
@@ -47,6 +47,7 @@ class SAR_imaging:
         self.k_e=2*np.pi/(self.light_speed/self.frequency)
         self.band=Band.C
         self.I=np.zeros((self.N,self.N))
+        self.minus_PSI=surfaceGenerator.minus_PSI
         if self.band==Band.X:
             self.dielectric_constant=49-35.5j
         elif self.band==Band.C:
@@ -64,7 +65,7 @@ class SAR_imaging:
         sigma=self.NRCS()
         Ur=self.u_r
         print(f"Variance of Obrital Velocities {np.var(Ur)}")
-        print(f"rho0 {self.v_covariance(0)[0,0]} max {np.max(self.v_covariance(0))}")
+        # print(f"rho0 {self.v_covariance(0)[0,0]} max {np.max(self.v_covariance(0))}")
         # print(f"azimiuhth resolution {self.azimuth_resolution()}")
         pa=self.degraded_azimuthal_resolution()
         print(f"degraged resolution {pa}")
@@ -86,10 +87,12 @@ class SAR_imaging:
         sn=0#np.gradient(self.surface,axis=0)
         sp=0#np.gradient(self.surface,axis=1)
         theta_l=np.arccos(np.cos(theta-sp)*np.cos(sn))
+        print(f"psi {np.cos(theta_l)}")
         return 8*np.pi*self.k_e**4*np.cos(theta_l)**4*PSI*np.abs(self.complex_scattering())**2
     
     def NRCS(self):
-        return self.average_NRCS()*(1+np.real(2*np.fft.ifft2(np.fft.ifftshift(self.RAR_MTF()*np.fft.fftshift(np.fft.fft2(self.surface))))))
+        print(f"average nrcs {self.average_NRCS()}")
+        return self.average_NRCS()*(1+np.real(2*np.fft.ifft2(np.fft.ifftshift(self.RAR_MTF()*np.fft.fftshift(np.fft.fft2(self.surface))+np.conj(self.RAR_MTF()*np.fft.fftshift(np.fft.fft2(self.surface)))))))
 
     def complex_scattering(self):
         if self.polarization==Polarization.Vertical:
@@ -111,34 +114,14 @@ class SAR_imaging:
     def velocity_bunching_mtf(self):
         return 1j*self.R/self.V*self.kx*self.dispersion_relation*(np.sin(self.incidence_angle)*np.cos(self.wind_direction)+1j*np.cos(self.incidence_angle))
     
-    def orbital_velocity_mtf(self):
+    def orbital_velocity_mtf(self, negative=False):
+        if negative:
+            return -self.dispersion_relation*(self.kx/-self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
         return -self.dispersion_relation*(self.kx/self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
     
     def orbital_velocity(self):
-        x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
         self.u_r=np.real(np.fft.ifft2(np.fft.ifftshift(self.orbital_velocity_mtf()*np.fft.fftshift(np.fft.fft2(self.surface)))))
         return
-        # vzz =  -self.N*np.real(np.fft.ifft2(np.fft.ifftshift(1j*self.dispersion_relation*np.fft.fftshift(np.fft.fft2(self.surface)))))
-        # vxx =  self.N*np.real(np.fft.ifft2(np.fft.ifftshift(self.dispersion_relation*(self.kx/np.sqrt(self.kx**2+self.ky**2))*np.fft.fftshift(np.fft.fft2(self.surface)))))
-        # vyy =  self.N*np.real(np.fft.ifft2(np.fft.ifftshift(self.dispersion_relation*(self.ky/np.sqrt(self.kx**2+self.ky**2))*np.fft.fftshift(np.fft.fft2(self.surface)))))
-        # vrr = vzz*np.cos(self.incidence_angle) - np.sin(self.incidence_angle)*(vxx*np.sin(self.wind_direction)+vyy*np.cos(self.wind_direction))
-        x, y=np.meshgrid(np.linspace(-self.L/2,self.L/2,self.N), np.linspace(-self.L/2,self.L/2,self.N))
-        g=9.81
-        u_x=np.zeros((self.N,self.N))
-        u_y=np.zeros((self.N,self.N))
-        u_z=np.zeros((self.N,self.N))
-        print(self.wave_coeffs.shape)
-        # Check shape and dtype of self.wave_coeffs
-        wave_coeffs=np.real(self.wave_coeffs)
-        print("Shape of self.wave_coeffs:", wave_coeffs.shape)
-        print("Dtype of self.wave_coeffs:", wave_coeffs.dtype)
-        # aaa=wave_coeffs[]
-        for i in range(self.N):
-            for j in range(self.N):
-                u_x+=g*wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y)*np.cos(self.wind_direction)
-                u_y+=g*wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y)*np.sin(self.wind_direction)
-                u_z+=g*wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.sin(self.kx[i,j]*x+self.ky[i,j]*y)
-        self.u_r=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
 
     def orbital_velocity_sum(self):
         x, y=np.meshgrid(np.linspace(-self.L/2,self.L/2,self.N), np.linspace(-self.L/2,self.L/2,self.N))
@@ -201,8 +184,8 @@ class SAR_imaging:
         # print(self.coherence_time())
         print(f"integration time {self.integration_time}")
         print(f"coherence time {self.coherence_time()}")
+        # return 2
         return self.azimuth_resolution()*np.sqrt(1+(self.integration_time/self.coherence_time())**2)
-        # return self.azimuth_resolution()*np.sqrt(1+(self.integration_time/self.coherence_time())**2)
     
     def wave_field(self):
         return 2*np.abs(self.SAR_MTF())**2*np.fft.fftshift(np.fft.fft2(self.I))
@@ -212,8 +195,11 @@ class SAR_imaging:
         noise=np.random.exponential(scale=1,size=(self.N, self.N))
         return self.I*noise
     
-    def v_covariance(self,x=None):
-        return np.real(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift(np.fft.fftshift(abs(self.orbital_velocity_mtf())**2)*(self.PSI)))))
+    def v_covariance(self,x=0):
+        return np.trapz(np.trapz((abs(self.orbital_velocity_mtf()))**2*self.PSI,self.kx[0,:],axis=0),self.ky[:,0],axis=0)*np.exp(1j*self.wavenumbers*np.sqrt(x))
+        # x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
+        #USING NOWreturn np.real(np.fft.fftshift(np.fft.ifft2(np.fft.ifftshift((abs(self.orbital_velocity_mtf())**2)*(self.PSI)))))
+        # return 0.5*np.real(np.trapz(np.trapz((abs(self.orbital_velocity_mtf())**2)*(self.PSI),self.kx[0,:], axis=0), self.ky[:,0], axis=0))*np.exp(1j*(self.wavenumbers*x+self.wavenumbers*y))
         # rho = real(fft.ifft2((abs(fft.fftshift(T_ku))**2*fft.fftshift(PSI)),(Nx,Ny)))
         # return np.real(np.fft.ifft2((abs(np.fft.fftshift(self.orbital_velocity_mtf()))**2*(self.PSI))))#*self.L**2/(2*np.pi)**2
         # return np.real(np.trapz(np.trapz((abs(self.orbital_velocity_mtf())**2*self.PSI+np.conj(abs(self.orbital_velocity_mtf())**2*self.PSI))*np.exp(1j*self.wavenumbers*x),self.wavenumbers[0,:], axis=0),self.wavenumbers[:,0]))
@@ -224,15 +210,17 @@ class SAR_imaging:
     def Rv_covariance(self,x):
         return 1/2*np.trapz(np.trapz((self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI+np.conj(self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI))*np.exp(1j*self.wavenumbers*x),self.wavenumbers[0,:], axis=0),self.wavenumbers[:,0])
 
-    def linear_transform(self):
-        return 0.5*(abs(self.SAR_MTF())**2*self.PSI+np.conj(abs(self.SAR_MTF())**2*self.PSI))
+    def inverse_linear_transform(self):
+        return 0.5*(abs(self.SAR_MTF())**2*self.PSI+(abs(self.SAR_MTF())**2*np.rot90(self.PSI,2)))
 
-    def quasilinear_transform(self):
+    def inverse_quasilinear_transform(self):
         # i think i might be omiting the imag part
-        print(f"rho0 {self.v_covariance(0)}")
-        return np.exp(-self.kx**2*self.beta**2*self.v_covariance(0))*self.linear_transform()
+        # print(f"rho0 {self.v_covariance(0)}")
+        x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
+        print(f"ql coeff {self.beta**2}")
+        return np.exp(-self.kx**2*self.beta**2*np.var(self.u_r))*self.inverse_linear_transform()
 
-    def nonlinear_transform(self):
+    def inverse_nonlinear_transform(self):
         x, y=np.meshgrid(np.linspace(0, self.L, self.N), np.linspace(0, self.L, self.N))
         ksi=self.beta**2*self.v_covariance(0)
         return 1/(4*np.pi**2)*np.exp(-self.kx**2*ksi)*np.trapz(np.exp(self.kx**2*self.beta**2*self.v_covariance(x))*(1+self.R_covariance(x)+1j*self.beta*(self.Rv_covariance(x)-self.Rv_covariance(-x))+(self.kx*self.beta)**2*(self.Rv_covariance(x)-self.Rv_covariance(0))*(self.Rv_covariance(-x)-self.Rv_covariance(0))),dx=self.dx*self.dx)

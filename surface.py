@@ -38,13 +38,13 @@ class surfaceGenerator:
         MONOCHROMATIC=False
         if MONOCHROMATIC:
             # self.K[150,129]=k_tmp[128,160]
-            x=150
-            y=255
+            x=self.N//2+10
+            y=self.N//2
             tmp=kx[x,y]
             kx=np.zeros((self.N,self.N))
             ky=np.zeros((self.N,self.N))
-            kx[x,y]=tmp
-            ky[x,y]=tmp
+            kx[x,y]=0.5
+            ky[x,y]=0
 
         self.KX=kx
         self.KY=ky
@@ -68,6 +68,8 @@ class surfaceGenerator:
         # plt.plot(self.theta)
         # plt.show()
         self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.K,v=self.wind_speed,F=self.fetch, good_k=None)
+        minus_omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=-self.K,v=self.wind_speed,F=self.fetch, good_k=None)
+
         # self.omnidirectional_spectrum.plot()
         self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
         # self.spreading_function.plot()
@@ -81,8 +83,9 @@ class surfaceGenerator:
         D=self.spreading_function.getSpread()
         wave_dirspec = (kinv) * S * D
         self.PSI=kinv*S*D
-
+        self.minus_PSI=kinv*minus_omnidirectional_spectrum.getSpectrum()*D
         self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
+        self.random_phase=np.angle(self.random_cg)
         self.wave_coeffs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*self.random_cg).astype(np.complex64)
 
     def generateTimeSeries(self):

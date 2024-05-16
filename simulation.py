@@ -11,9 +11,9 @@ spreading=spreading_model.Simple_Cosine
 n=6
 S=8
 length=512
-N=128
-wind_speed=7
-wind_direction=np.pi/2
+N=256
+wind_speed=6
+wind_direction=np.pi/4
 seconds=5
 timestep=0.5
 fetch=25000
@@ -41,18 +41,33 @@ fig, (axSurface,axSurfaceSu)=plt.subplots(1,2)
 axSurface.imshow(sar.surface, origin='lower')
 axSurfaceSu.imshow(sar.I, origin='lower')
 print(f"mtf max {np.max(sar.tilt_mtf())}")
+# print(f"covariance 0 {sar.v_covariance()}")
+integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.PSI,sar.kx[0,:],axis=0),sar.ky[:,0],axis=0)
+print(f"integral covariance {integral_covariance}")
 fig1, (ax1)=plt.subplots(1)
-ax1.plot((sar.v_covariance())[N//2,:],label="middle row")
-ax1.plot((sar.v_covariance())[:,N//2],label="middle row")
+x, y=np.meshgrid(np.linspace(-sar.L/2,sar.L/2,sar.N), np.linspace(-sar.L/2,sar.L/2,sar.N))
+
+ax1.imshow(np.real(integral_covariance*np.exp(1j*sar.wavenumbers*np.sqrt(x**2+y**2))),origin='lower')
+# ax1.plot((sar.v_covariance()[N//2,:]))
+# ax1.plot((sar.v_covariance()[:,N//2]))
+# x, y=np.meshgrid(np.linspace(0, sar.L, sar.N), np.linspace(0, sar.L, sar.N))
+# ax2.contour(sar.kx, sar.ky,(abs(sar.orbital_velocity_mtf())))
+# ax2.plot(0.5*np.real(np.trapz((abs(sar.orbital_velocity_mtf())**2)*(sar.PSI),sar.wavenumbers [0,:], axis=0))*np.exp(1j*sar.wavenumbers*np.sqrt(x**2+y**2)))
+# ax1.plot((sar.v_covariance())[:,N//2],label="middle row")
 # ax1.plot(sar.v_covariance()[:,128],label="middle column")
 # ax1.set_ylim([-1,1])
-print(f"theoretical {np.trapz(np.trapz(sar.dispersion_relation*sar.PSI,sar.kx[0,:], axis=0), sar.ky[:,0], axis=0)}, covaraince {sar.v_covariance()[N//2,N//2]}")
+print(f"theoretical {np.trapz(np.trapz(sar.dispersion_relation*sar.PSI,sar.kx[0,:], axis=0),sar.ky[:,0],axis=0)}, covaraince {sar.v_covariance()[N//2,N//2]}")
+
 plt.legend()
-# ovColorbar=axOV.imshow(sar.u_r, origin='lower')
-# plt.colorbar(ovColorbar, ax=axOV)
-# ovSumColorbar=axOVsum.imshow(sar.u_r_sum, origin='lower')
-# plt.colorbar(ovSumColorbar, ax=axOVsum)
-# print(f"{np.var(sar.surface)} {np.var(sar.hta)} {np.var(sar.u_r)} {np.var(sar.u_r_sum)}")
+#------Orbital Velocity Verification-------
+# # # # fig2, (axa,axb, axOV, axOVsum)=plt.subplots(1,4)
+# # # # axa.imshow(sar.surface, origin='lower')
+# # # # axb.imshow(sar.hta, origin='lower')
+# # # # ovColorbar=axOV.imshow(sar.u_r, origin='lower')
+# # # # plt.colorbar(ovColorbar, ax=axOV)
+# # # # ovSumColorbar=axOVsum.imshow(sar.u_r_sum, origin='lower')
+# # # # plt.colorbar(ovSumColorbar, ax=axOVsum)
+# # # # print(f"{np.var(sar.surface)} {np.var(sar.hta)} {np.var(sar.u_r)} {np.var(sar.u_r_sum)}")
 # figTilt, (axSurface, axTilt, axGrad)=plt.subplots(1,3)
 # axSurface.imshow(Z[0,:,:], origin='lower')
 # tilt=np.real(2*np.fft.ifft2(np.fft.ifftshift(sar.tilt_mtf()*np.fft.fftshift(np.fft.fft2(sar.surface)))))
