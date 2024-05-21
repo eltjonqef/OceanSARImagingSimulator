@@ -10,8 +10,8 @@ spreading=spreading_model.Simple_Cosine
 
 n=6
 S=8
-length=512
-N=256
+length=64
+N=128
 wind_speed=6
 wind_direction=np.pi/4
 seconds=5
@@ -45,9 +45,12 @@ print(f"mtf max {np.max(sar.tilt_mtf())}")
 integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.PSI,sar.kx[0,:],axis=0),sar.ky[:,0],axis=0)
 print(f"integral covariance {integral_covariance}")
 fig1, (ax1)=plt.subplots(1)
-x, y=np.meshgrid(np.linspace(-sar.L/2,sar.L/2,sar.N), np.linspace(-sar.L/2,sar.L/2,sar.N))
+plt.imshow(np.fft.fftshift(np.real(np.fft.ifft2(np.fft.ifftshift(abs(np.fft.fftshift(sar.orbital_velocity_mtf().T))**2*(sar.PSI))))), origin='lower')
+plt.colorbar()
+# ax1.plot(2*np.real(np.fft.ifft2(np.fft.ifftshift(np.fft.fftshift(abs(sar.orbital_velocity_mtf())**2)*np.fft.fftshift(sar.PSI)))))
+# x, y=np.meshgrid(np.linspace(-sar.L/2,sar.L/2,sar.N), np.linspace(-sar.L/2,sar.L/2,sar.N))
 
-ax1.imshow(np.real(integral_covariance*np.exp(1j*sar.wavenumbers*np.sqrt(x**2+y**2))),origin='lower')
+# ax1.imshow(np.real(integral_covariance*np.exp(1j*sar.wavenumbers*np.sqrt(x**2+y**2))),origin='lower')
 # ax1.plot((sar.v_covariance()[N//2,:]))
 # ax1.plot((sar.v_covariance()[:,N//2]))
 # x, y=np.meshgrid(np.linspace(0, sar.L, sar.N), np.linspace(0, sar.L, sar.N))
