@@ -1,5 +1,6 @@
 
 import numpy as np
+from numpy.fft import fft2, fftshift, ifft2, ifftshift, fftfreq
 from omnidirectional_spectrum import omnidirectional_spectrum, spectrum_model
 from spreading_function import spreading_function, spreading_model
 
@@ -29,8 +30,9 @@ class surfaceGenerator:
         
     
     def generateSurface(self):
-        kx_s = np.fft.fftshift((2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32))
-        ky_s = np.fft.fftshift((2*np.pi*np.fft.fftfreq(self.N, self.dx)).astype(np.float32))
+        kx_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
+        ky_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
+        self.Ks=kx_s[1]-kx_s[0]
         kx, ky = np.meshgrid(kx_s, ky_s)
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
@@ -74,6 +76,10 @@ class surfaceGenerator:
         self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
         # self.spreading_function.plot()
         S=self.omnidirectional_spectrum.getSpectrum()
+        import matplotlib.pyplot as plt
+        plt.plot(self.K,S)
+        plt.xscale('log')
+        plt.yscale('log')
         # S[150,150]=500
         S[np.isnan(S)]=0
         self.KX[self.KX==0]=0.00000001
@@ -91,7 +97,7 @@ class surfaceGenerator:
     def generateTimeSeries(self):
         for frame, t in enumerate(self.time):
             wave_coefs_phased=(self.wave_coeffs*np.exp(-1j*self.omega*t)).astype(np.complex64)
-            self.surface[frame,:,:]=np.real(np.fft.ifft2(np.fft.ifftshift(wave_coefs_phased)))
+            self.surface[frame,:,:]=np.real(ifft2(ifftshift(wave_coefs_phased)))
         
 
     
