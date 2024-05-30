@@ -9,12 +9,13 @@ class spreading_model(Enum):
     Elfouhaily=2
 
 class spreading_function:
-    def __init__(self, function, theta, n=2, S=8, F=25000, k=0.1, v=10, good_k=None):
+    def __init__(self, function, theta, wind_direction, n=2, S=8, F=25000, k=0.1, v=10, good_k=None):
         self.D=np.zeros(theta.shape, dtype=np.float32)
         if good_k:
             self.theta=theta[good_k]
         else:
             self.theta=theta
+        self.wind_direction=wind_direction
         self.k=k
         self.n=n
         self.S=S
@@ -61,13 +62,13 @@ class spreading_function:
         plt.savefig(filename)
 
     def Simple_Cosine(self):
-        f=2/np.pi*np.power(np.cos(self.theta),self.n) 
-        mask=(np.abs(self.theta)>np.pi/2) & (np.abs(self.theta)<3*np.pi/2)
+        f=2/np.pi*np.power(np.cos(self.theta-self.wind_direction),self.n) 
+        mask=(np.abs(self.theta-self.wind_direction)>np.pi/2) & (np.abs(self.theta-self.wind_direction)<3*np.pi/2)
         f[mask]=0
         return f
 
     def Longuet_Higgins(self):
-        return (gamma(self.S+1)/(gamma(self.S+0.5)*2*np.sqrt(np.pi)))*np.cos(self.theta/2)**(2*self.S)
+        return (gamma(self.S+1)/(gamma(self.S+0.5)*2*np.sqrt(np.pi)))*np.cos((self.theta-self.wind_direction)/2)**(2*self.S)
 
     def Elfouhaily(self):
         a_0=np.log(2)/4
@@ -85,4 +86,4 @@ class spreading_function:
         k_p=k_0*np.power(Omega_c,2)
         c_p=np.sqrt(self.g/k_p)
         delta_k=np.tanh(a_0+a_p*np.power(c/c_p,2.5)+a_m*np.power(c_m/c,2.5))
-        return 1/(2*np.pi)*(1+delta_k*np.cos(2*(self.theta)))
+        return 1/(2*np.pi)*(1+delta_k*np.cos(2*(self.theta-self.wind_direction)))

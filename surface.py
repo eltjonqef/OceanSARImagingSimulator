@@ -36,10 +36,8 @@ class surfaceGenerator:
         kx, ky = np.meshgrid(kx_s, ky_s)
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
-        # if self.monochromatic:
         MONOCHROMATIC=False
         if MONOCHROMATIC:
-            # self.K[150,129]=k_tmp[128,160]
             x=self.N//2+10
             y=self.N//2
             tmp=kx[x,y]
@@ -47,49 +45,26 @@ class surfaceGenerator:
             ky=np.zeros((self.N,self.N))
             kx[x,y]=0.5
             ky[x,y]=0
-
         self.KX=kx
         self.KY=ky
-        
         k_tmp = np.sqrt(kx**2 + ky**2)
         good_k = np.where(k_tmp > np.min(np.array([kx_res, ky_res])) / 2.0)
         self.K=np.zeros(k_tmp.shape, dtype=np.float32)
         self.K[good_k]=k_tmp[good_k]
-        # self.K=k_tmp
-        # self.K[self.K==0]=0.000000000001#np.finfo(float).tiny
-        kxn = np.zeros_like(kx, dtype=np.float32)
-        kyn = np.zeros_like(kx, dtype=np.float32)
-        kxn[good_k] = kx[good_k] #/ self.K[good_k]
-        kyn[good_k] = ky[good_k]#/ self.K[good_k]
-        # kx=kxn
-        # ky=kyn
         kinv = np.zeros(self.K.shape, dtype=np.float32)
         kinv[good_k] = 1./self.K[good_k]
-        self.theta = np.angle(np.exp(1j * (np.arctan2(ky, kx) -self.wind_direction))).astype(np.float32)
-        # import matplotlib.pyplot as plt
-        # plt.plot(self.theta)
-        # plt.show()
+        self.theta = np.angle(np.exp(1j * (np.arctan2(ky, kx)))).astype(np.float32)
         self.omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=self.K,v=self.wind_speed,F=self.fetch, good_k=None)
-        minus_omnidirectional_spectrum=omnidirectional_spectrum(spectrum=self.spectrum,k=-self.K,v=self.wind_speed,F=self.fetch, good_k=None)
-
-        # self.omnidirectional_spectrum.plot()
-        self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
-        # self.spreading_function.plot()
+        self.spreading_function=spreading_function(function=self.spreading, theta=self.theta, wind_direction=self.wind_direction,n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None)
         S=self.omnidirectional_spectrum.getSpectrum()
-        import matplotlib.pyplot as plt
-        plt.plot(self.K,S)
-        plt.xscale('log')
-        plt.yscale('log')
-        # S[150,150]=500
         S[np.isnan(S)]=0
         self.KX[self.KX==0]=0.00000001
         self.KY[self.KY==0]=0.00000001
         self.K[self.K==0]=0.00000001
         self.omega = np.sqrt(np.float32(self.g) * self.K)
         D=self.spreading_function.getSpread()
-        wave_dirspec = (kinv) * S * D
+        wave_dirspec = kinv*S * D
         self.PSI=kinv*S*D
-        self.minus_PSI=kinv*minus_omnidirectional_spectrum.getSpectrum()*D
         self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
         self.random_phase=np.angle(self.random_cg)
         self.wave_coeffs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*self.random_cg).astype(np.complex64)

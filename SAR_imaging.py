@@ -48,7 +48,6 @@ class SAR_imaging:
         self.k_e=2*np.pi/(self.light_speed/self.frequency)
         self.band=Band.C
         self.I=np.zeros((self.N,self.N))
-        self.minus_PSI=surfaceGenerator.minus_PSI
         if self.band==Band.X:
             self.dielectric_constant=49-35.5j
         elif self.band==Band.C:
@@ -58,7 +57,7 @@ class SAR_imaging:
 
     def generate(self):
         self.orbital_velocity()
-        # self.orbital_velocity_sum()
+        self.orbital_velocity_sum()
         self.image()
         self.v_covariance()
         self.Rv_covariance()
@@ -143,15 +142,15 @@ class SAR_imaging:
         for i in range(self.N):
             for j in range(self.N):
                 self.hta+=wave_coeffs[i,j]*np.cos(x*self.kx[i,j]+y*self.ky[i,j]+self.random_phase[i,j])
-                u_x+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.cos(self.wind_direction)
-                u_y+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.sin(self.wind_direction)
-                u_z+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.sin(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])
+                # u_x+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.cos(self.wind_direction)
+                # u_y+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.sin(self.wind_direction)
+                # u_z+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.sin(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])
             print(i)
         # u_x*=g
         # u_y*=g
         # u_z*=g
 
-        self.u_r_sum=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
+        # self.u_r_sum=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
 
     def mean_orbital_velocity(self):
         B_f=2/(self.kx*self.dx)*np.sin(self.kx*self.dx/2)*2/(self.ky*self.dx)*np.sin(self.ky*self.dx/2)*2/(self.dispersion_relation*self.integration_time)*np.sin(self.dispersion_relation*self.integration_time/2)
