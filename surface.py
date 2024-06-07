@@ -32,10 +32,10 @@ class surfaceGenerator:
     def generateSurface(self):
         kx_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
         ky_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
-        self.Ks=kx_s[1]-kx_s[0]
         kx, ky = np.meshgrid(kx_s, ky_s)
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
+        self.Ks=kx_res
         MONOCHROMATIC=False
         if MONOCHROMATIC:
             x=self.N//2+10
@@ -65,13 +65,14 @@ class surfaceGenerator:
         D=self.spreading_function.getSpread()
         wave_dirspec = kinv*S * D
         self.PSI=kinv*S*D
+        np.random.seed(10)
         self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
         self.random_phase=np.angle(self.random_cg)
-        self.wave_coeffs=(self.N*self.N*np.sqrt(2.*wave_dirspec*kx_res*ky_res)*self.random_cg).astype(np.complex64)
+        self.wave_coeffs=(np.sqrt(2.*wave_dirspec*kx_res*ky_res))
 
     def generateTimeSeries(self):
         for frame, t in enumerate(self.time):
-            wave_coefs_phased=(self.wave_coeffs*np.exp(-1j*self.omega*t)).astype(np.complex64)
+            wave_coefs_phased=(self.N*self.N*self.wave_coeffs*self.random_cg*np.exp(-1j*self.omega*t)).astype(np.complex64)
             self.surface[frame,:,:]=np.real(ifft2(ifftshift(wave_coefs_phased)))
         
 

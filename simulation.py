@@ -10,10 +10,10 @@ spreading=spreading_model.Longuet_Higgins
 
 n=6
 S=12
-length=1024
+length=256
 N=256
-wind_speed=32
-wind_direction=np.pi/4
+wind_speed=5
+wind_direction=np.pi/2
 seconds=5
 timestep=0.5
 fetch=25000
@@ -45,14 +45,14 @@ integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.P
 
 plt.legend()
 #------Orbital Velocity Verification-------
-fig2, (axa,axb)=plt.subplots(1,2)
-surfaceColorbar=axa.imshow(sar.surface, origin='lower')
-plt.colorbar(surfaceColorbar, ax=axa)
-etaColorbar=axb.imshow(sar.hta, origin='lower')
-plt.colorbar(etaColorbar, ax=axb)
-# ovColorbar=axOV.imshow(sar.u_r, origin='lower')
-# plt.colorbar(ovColorbar, ax=axOV)
-# ovSumColorbar=axOVsum.imshow(sar.u_r_sum, origin='lower')
-# plt.colorbar(ovSumColorbar, ax=axOVsum)
-print(f"{np.var(sar.surface)} {np.var(sar.hta)}")# {np.var(sar.u_r)} {np.var(sar.u_r_sum)}")
+# # # # fig2, (axa,axb,axOV, axOVsum)=plt.subplots(1,4)
+# # # # surfaceColorbar=axa.imshow(sar.surface, origin='lower')
+# # # # plt.colorbar(surfaceColorbar, ax=axa)
+# # # # etaColorbar=axb.imshow(sar.hta, origin='lower')
+# # # # plt.colorbar(etaColorbar, ax=axb)
+# # # # ovColorbar=axOV.imshow(sar.u_r, origin='lower')
+# # # # plt.colorbar(ovColorbar, ax=axOV)
+# # # # ovSumColorbar=axOVsum.imshow(sar.u_r_sum, origin='lower')
+# # # # plt.colorbar(ovSumColorbar, ax=axOVsum)
+# # # # print(f"{np.var(sar.surface)} {np.var(sar.hta)} {np.var(sar.u_r)} {np.var(sar.u_r_sum)}")
 plt.show()

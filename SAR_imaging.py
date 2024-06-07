@@ -23,7 +23,7 @@ class SAR_imaging:
         self.H=693000
         self.V=7400
         self.R=self.H/np.cos(incidence_angle)
-        self.beta=self.R/self.V
+        self.beta=1#self.R/self.V
         self.spatial_resolution=spatial_resolution
         print(self.beta)
         self.L=length
@@ -54,10 +54,11 @@ class SAR_imaging:
             self.dielectric_constant=60-36j
         elif self.band==Band.L:
             self.dielectric_constant=72-59j
+        self.Ks=surfaceGenerator.Ks
 
     def generate(self):
         self.orbital_velocity()
-        self.orbital_velocity_sum()
+        # self.orbital_velocity_sum()
         self.image()
         self.v_covariance()
         self.Rv_covariance()
@@ -136,21 +137,21 @@ class SAR_imaging:
 
         print(self.wave_coeffs.shape)
         # Check shape and dtype of self.wave_coeffs
-        wave_coeffs=np.abs(self.wave_coeffs)/self.N**2
+        # wave_coeffs=np.abs(self.wave_coeffs)/self.N**2
         # aaa=wave_coeffs[]
         #np.cos(k*(self.x*np.cos(self.wind_direction)+self.y*np.sin(self.wind_direction))-self.omega[i]*t)
         for i in range(self.N):
             for j in range(self.N):
-                self.hta+=wave_coeffs[i,j]*np.cos(x*self.kx[i,j]+y*self.ky[i,j]+self.random_phase[i,j])
-                # u_x+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.cos(self.wind_direction)
-                # u_y+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.sin(self.wind_direction)
-                # u_z+=wave_coeffs[i,j]*self.dispersion_relation[i,j]*np.sin(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])
+                self.hta+=self.wave_coeffs[i,j]*np.cos(x*self.kx[i,j]+y*self.ky[i,j]+self.random_phase[i,j])
+                u_x+=self.wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.cos(self.wind_direction)
+                u_y+=self.wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.cos(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])*np.sin(self.wind_direction)
+                u_z+=self.wave_coeffs[i,j]/self.dispersion_relation[i,j]*self.wavenumbers[i,j]*np.sin(self.kx[i,j]*x+self.ky[i,j]*y+self.random_phase[i,j])
             print(i)
-        # u_x*=g
-        # u_y*=g
-        # u_z*=g
+        u_x*=g
+        u_y*=g
+        u_z*=g
 
-        # self.u_r_sum=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
+        self.u_r_sum=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
 
     def mean_orbital_velocity(self):
         B_f=2/(self.kx*self.dx)*np.sin(self.kx*self.dx/2)*2/(self.ky*self.dx)*np.sin(self.ky*self.dx/2)*2/(self.dispersion_relation*self.integration_time)*np.sin(self.dispersion_relation*self.integration_time/2)
@@ -171,12 +172,12 @@ class SAR_imaging:
     def coherence_time(self):
         wind_speed_19_5=self.wind_speed*(19.5/10)**(1/7)
         print(f"wind speed {wind_speed_19_5}")
-        return 3*self.wavelength/wind_speed_19_5*special.erf(2.7*self.spatial_resolution/wind_speed_19_5**2)**(-1/2)
+        return 3*self.wavelength/wind_speed_19_5*special.erf(2.7*self.azimuth_resolution()/wind_speed_19_5**2)**(-1/2)
     
     def azimuth_resolution(self):
         lamda_e=2*np.pi/self.k_e
         # print(f"azimuth resolution {(lamda_e*self.R)/(2*self.V*self.integration_time)}")
-        return 2
+        return 1
         return (lamda_e*self.R)/(2*self.V*self.integration_time)
 
     def degraded_azimuthal_resolution(self):
@@ -197,15 +198,18 @@ class SAR_imaging:
         return self.I*noise
     
     def v_covariance(self):
-        self.f_v=np.real(ifft2(ifftshift(abs(self.orbital_velocity_mtf())**2*self.PSI),(self.N,self.N),norm='ortho')/(np.pi*self.dx)**2).astype(np.float32)
+        self.f_v=np.real(ifft2(ifftshift(abs(self.orbital_velocity_mtf())**2*self.PSI/self.Ks)))
+        # self.f_v=np.real(ifft2(ifftshift(self.N*self.N*abs(self.orbital_velocity_mtf())**2*self.PSI/self.Ks)))#,(self.N,self.N),norm='ortho')/(np.pi*self.dx)**2).astype(np.float32)
+        # self.f_vA=np.real(ifft2(ifftshift(abs(self.orbital_velocity_mtf())**2*self.PSI/self.Ks),(self.N,self.N)))
         # return np.trapz(np.trapz((abs(self.orbital_velocity_mtf()))**2*self.PSI,self.kx[0,:],axis=0),self.ky[:,0],axis=0)*np.exp(1j*self.wavenumbers*np.sqrt(x))
 
     def R_covariance(self):
-        self.f_r=0.5*np.real(ifft2(ifftshift(abs(self.RAR_MTF())**2*self.PSI+abs(np.rot90(self.RAR_MTF(),2))**2*np.rot90(self.PSI,2)),(self.N,self.N),norm='ortho')/(np.pi*self.dx)**2).astype(np.float32)
+        self.f_r=0.5*np.real(ifft2(ifftshift(abs(self.RAR_MTF())**2*self.PSI/self.Ks+abs(np.rot90(self.RAR_MTF(),2))**2*np.rot90(self.PSI/self.Ks,2))))
         # return 1/2*np.trapz(np.trapz((abs(self.RAR_MTF())**2*self.PSI+np.conj(abs(self.RAR_MTF())**2*self.PSI))*np.exp(1j*self.wavenumbers*x),self.wavenumbers[0,:], axis=0),self.wavenumbers[:,0])
 
     def Rv_covariance(self):
-        self.f_rv=0.5*np.real(ifft2(ifftshift(self.RAR_MTF()*np.conj(self.orbital_velocity_mtf())*self.PSI+np.conj(self.RAR_MTF())*np.rot90(self.orbital_velocity_mtf(),2)*np.rot90(self.PSI,2)),(self.N,self.N),norm='ortho')/(np.pi*self.dx)**2).astype(np.float32)
+
+        self.f_rv=0.5*np.real(ifft2(ifftshift(self.RAR_MTF()*np.conj(self.orbital_velocity_mtf())*self.PSI/self.Ks+np.conj(np.rot90(self.RAR_MTF(),2))*np.rot90(self.orbital_velocity_mtf(),2)*np.rot90(self.PSI/self.Ks,2))))
         # return 1/2*np.trapz(np.trapz((self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI+np.conj(self.RAR_MTF()*self.orbital_velocity_mtf()*self.PSI))*np.exp(1j*self.wavenumbers*x),self.wavenumbers[0,:], axis=0),self.wavenumbers[:,0])
 
     def inverse_linear_transform(self):
