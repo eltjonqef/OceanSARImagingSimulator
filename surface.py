@@ -3,31 +3,32 @@ import numpy as np
 from numpy.fft import fft2, fftshift, ifft2, ifftshift, fftfreq
 from omnidirectional_spectrum import omnidirectional_spectrum, spectrum_model
 from spreading_function import spreading_function, spreading_model
-
+from parameters import parameters
 class surfaceGenerator:
-    def __init__(self, spectrum, spreading, length, N, wind_speed, wind_direction, n, S, seconds, timestep, fetch, elfouhaily_k):
-        self.spectrum=spectrum
+    def __init__(self, params:parameters):
+        self.spectrum=params.spectrum
         self.omnidirectional_spectrum=None
         self.spreading_function=None
-        self.spreading=spreading
+        self.spreading=params.spreading
         self.g=9.81
-        self.dx=length/N
-        self.L=length
-        self.N=N
-        self.n=n
-        self.S=S
-        self.elfouhaily_k=elfouhaily_k
+        self.dx=params.length/params.N
+        self.L=params.length
+        self.N=params.N
+        self.n=params.n
+        self.S=params.S
+        self.elfouhaily_k=params.elfouhaily_k
         print(self.N)
         print(self.dx)
         print(self.L)
         self.x=np.linspace(-self.L/2,self.L/2,self.N)
         self.y=np.linspace(-self.L/2,self.L/2,self.N)
-        self.time=np.linspace(0,seconds, int(seconds/timestep))
+        self.time=np.linspace(0,params.seconds, int(params.seconds/params.timestep))
         self.surface=np.zeros((self.time.size, self.N, self.N))
-        self.wind_speed=wind_speed
-        self.wind_direction=wind_direction
-        self.fetch=fetch
-        
+        self.wind_speed=params.wind_speed
+        self.wind_direction=params.wind_direction
+        self.fetch=params.fetch
+        self.MONOCHROMATIC=params.MONOCHROMATIC
+
     
     def generateSurface(self):
         kx_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
@@ -36,14 +37,14 @@ class surfaceGenerator:
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
         self.Ks=kx_res
-        MONOCHROMATIC=False
-        if MONOCHROMATIC:
+        print(f"kx_s {kx_s[1]-kx_s[0]}, kx_res {kx_res}")
+        if self.MONOCHROMATIC:
             x=self.N//2+10
             y=self.N//2
             tmp=kx[x,y]
             kx=np.zeros((self.N,self.N))
             ky=np.zeros((self.N,self.N))
-            kx[x,y]=0.5
+            kx[x,y]=0.01
             ky[x,y]=0
         self.KX=kx
         self.KY=ky
