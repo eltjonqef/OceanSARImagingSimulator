@@ -2,30 +2,30 @@ import matplotlib.pyplot as plt
 from omnidirectional_spectrum import spectrum_model
 from spreading_function import spreading_model
 import numpy as np
-from plots import plotMTFs, animate, plotModulations, plotSpectras, plotSurfaceSAR
+from plots import plotMTFs, animate, plotModulations, plotSpectras, plotSurfaceSAR,coherence_time
 from parameters import parameters
-
+coherence_time()
 params=parameters()
 #%% Surface Generation
 from surface import surfaceGenerator
 surfaceGenerator=surfaceGenerator(params)
 Z=surfaceGenerator.generate()
 animate(Z)
-print(f"Surface Variances {surfaceGenerator.getSurfaceVariances()}")
-print(f"Spectrum Integral {surfaceGenerator.getSpectrumIntegral()}")
-print(f"Slope Variances {surfaceGenerator.getSlopesVariance()}")
-print(f"Slope Integral {surfaceGenerator.getSlopeIntegral()}")
-print(f"Significant wave height {surfaceGenerator.getSignificantWaveHeights()}")
-print(f"max {np.max(Z[0,:,:])}")
+# print(f"Surface Variances {surfaceGenerator.getSurfaceVariances()}")
+# print(f"Spectrum Integral {surfaceGenerator.getSpectrumIntegral()}")
+# print(f"Slope Variances {surfaceGenerator.getSlopesVariance()}")
+# print(f"Slope Integral {surfaceGenerator.getSlopeIntegral()}")
+# print(f"Significant wave height {surfaceGenerator.getSignificantWaveHeights()}")
+# print(f"max {np.max(Z[0,:,:])}")
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging
 sar=SAR_imaging(surfaceGenerator, params)
 sar.generate()
 plotMTFs(sar)
-# plotModulations(sar)
+plotModulations(sar)
 plotSpectras(sar)
 plotSurfaceSAR(sar)
-integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.PSI,sar.kx[0,:],axis=0),sar.ky[:,0],axis=0)
+integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.PSI,sar.ky[:,0],axis=0),sar.kx[0,:],axis=0)
 
 
 

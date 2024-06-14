@@ -11,19 +11,20 @@ class surfaceGenerator:
         self.spreading_function=None
         self.spreading=params.spreading
         self.g=9.81
-        self.dx=params.length/params.N
-        self.L=params.length
-        self.N=params.N
+        self.dx=params.length_x/params.N_x
+        self.dy=params.length_y/params.N_y
+        self.L_x=params.length_x
+        self.L_y=params.length_y
+        self.N_x=params.N_x
+        self.N_y=params.N_y
         self.n=params.n
         self.S=params.S
         self.elfouhaily_k=params.elfouhaily_k
-        print(self.N)
-        print(self.dx)
-        print(self.L)
-        self.x=np.linspace(-self.L/2,self.L/2,self.N)
-        self.y=np.linspace(-self.L/2,self.L/2,self.N)
+
+        self.x=np.linspace(-self.L_x/2,self.L_x/2,self.N_x)
+        self.y=np.linspace(-self.L_y/2,self.L_y/2,self.N_y)
         self.time=np.linspace(0,params.seconds, int(params.seconds/params.timestep))
-        self.surface=np.zeros((self.time.size, self.N, self.N))
+        self.surface=np.zeros((self.time.size, self.N_y, self.N_x))
         self.wind_speed=params.wind_speed
         self.wind_direction=params.wind_direction
         self.fetch=params.fetch
@@ -31,8 +32,8 @@ class surfaceGenerator:
 
     
     def generateSurface(self):
-        kx_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
-        ky_s = fftshift((2*np.pi*fftfreq(self.N, self.dx)).astype(np.float32))
+        kx_s = fftshift((2*np.pi*fftfreq(self.N_x, self.dx)).astype(np.float32))
+        ky_s = fftshift((2*np.pi*fftfreq(self.N_y, self.dy)).astype(np.float32))
         kx, ky = np.meshgrid(kx_s, ky_s)
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
@@ -42,8 +43,8 @@ class surfaceGenerator:
             x=self.N//2+10
             y=self.N//2
             tmp=kx[x,y]
-            kx=np.zeros((self.N,self.N))
-            ky=np.zeros((self.N,self.N))
+            kx=np.zeros((self.N_x,self.N_y))
+            ky=np.zeros((self.N_x,self.N_y))
             kx[x,y]=0.01
             ky[x,y]=0
         self.KX=kx
@@ -67,13 +68,13 @@ class surfaceGenerator:
         wave_dirspec = kinv*S * D
         self.PSI=kinv*S*D
         np.random.seed(10)
-        self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N, self.N]) +1j * np.random.normal(0., 1., size=[self.N, self.N]))).astype(np.complex64)
+        self.random_cg = (1./np.sqrt(2) * (np.random.normal(0., 1., size=[self.N_y, self.N_x]) +1j * np.random.normal(0., 1., size=[self.N_y, self.N_x]))).astype(np.complex64)
         self.random_phase=np.angle(self.random_cg)
         self.wave_coeffs=(np.sqrt(2.*wave_dirspec*kx_res*ky_res))
 
     def generateTimeSeries(self):
         for frame, t in enumerate(self.time):
-            wave_coefs_phased=(self.N*self.N*self.wave_coeffs*self.random_cg*np.exp(-1j*self.omega*t)).astype(np.complex64)
+            wave_coefs_phased=(self.N_x*self.N_y*self.wave_coeffs*self.random_cg*np.exp(-1j*self.omega*t)).astype(np.complex64)
             self.surface[frame,:,:]=np.real(ifft2(ifftshift(wave_coefs_phased)))
         
 
@@ -89,7 +90,7 @@ class surfaceGenerator:
         return [np.var(self.surface[frame,:,:]) for frame, _ in enumerate(self.time)]
     
     def getSpectrumIntegral(self):
-        return np.trapz(np.trapz(self.PSI,self.KX[0,:], axis=0), self.KY[:,0], axis=0)
+        return np.trapz(np.trapz(self.PSI,self.KX[0,:], axis=1), self.KY[:,0], axis=0)
     
     def getSlopes(self):
         Sx=np.gradient(self.surface[0,:,:],axis=0).flatten()#[np.gradient(self.surface[frame,:,:],axis=0).flatten() for frame, _ in enumerate(self.time)]
@@ -102,7 +103,7 @@ class surfaceGenerator:
         return [np.var(Sx[frame])+np.var(Sy[frame]) for frame, _ in enumerate(self.time)]
 
     def getSlopeIntegral(self):
-        return np.trapz(np.trapz(np.power(self.KX[0,:],2).reshape(-1,1)*self.PSI,self.KX[0,:], axis=0), self.KY[:,0], axis=0)
+        return np.trapz(np.trapz(self.K**2*self.PSI,self.KX[0,:], axis=1), self.KY[:,0], axis=0)
     
     def getSignificantWaveHeights(self):
         return [4*np.sqrt(np.var(self.surface[frame,:,:])) for frame, _ in enumerate(self.time)]
