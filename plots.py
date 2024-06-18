@@ -177,6 +177,24 @@ def plotSurfaceSAR(sar):
     axSurfaceSAR.set_ylabel("Range")
     axSurfaceSAR.set_title("SAR Image")
 
+def plotCovariances(sar):
+    fig, (axFV,axFR,axFRV)=plt.subplots(1,3)
+    axFV.plot(np.fft.fftshift(sar.f_v))
+    axFV.set_title("Orbital Velocity Covariance")
+    axFR.plot(np.fft.fftshift(sar.f_r))
+    axFR.set_title("RAR Image Covariance")
+    axFRV.plot(np.fft.fftshift(sar.f_rv))
+    axFRV.set_title("RAR Image Orbital Velocity Covariance")
+
+def plotSpeckle(sar):
+    fig,(axSAR,axSpeckle,axSpeckleSpectrum)=plt.subplots(1,3)
+    axSAR.imshow(sar.I,origin='lower')
+    axSAR.set_title("SAR Image")
+    axSpeckle.imshow(sar.noisy_image(),origin='lower')
+    axSpeckle.set_title("Speckle Image")
+    axSpeckleSpectrum.contour(sar.kx, sar.ky,abs(np.fft.fftshift(np.fft.fft2(sar.noisy_image()-np.mean(sar.noisy_image())))))
+    axSpeckleSpectrum.set_title("Speck Image Spectrum")
+
 def coherence_time():
     from scipy import special
     fig, ax=plt.subplots(1,1)

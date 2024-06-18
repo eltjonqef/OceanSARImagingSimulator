@@ -2,6 +2,7 @@ numpy
 matplotlib
 ipykernel
 scipy
+PyYAML
 # only for KDE
 PyQt5
 PyQt6

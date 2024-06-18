@@ -13,13 +13,16 @@ class SAR_imaging:
         self.PSI=surfaceGenerator.PSI
         self.wave_coeffs=surfaceGenerator.wave_coeffs
         self.polarization=params.polarization
-        self.H=800000
-        self.V=7000
+        self.H=params.H
+        self.V=params.V
         self.R=self.H/np.cos(params.incidence_angle)
-        self.beta=self.R/self.V
-        if params.beta!=None:
-            self.beta=params.beta
-        print(self.beta)
+        self.beta=params.beta
+        if params.beta==0:
+            self.beta=self.R/self.V
+        print(f"r {self.R}")
+        print(f"r {self.V}")
+
+        print(f"beta {self.beta}")
         self.dx=params.length_x/params.N_x
         self.dy=params.length_y/params.N_y
         self.L_x=params.length_x
@@ -88,6 +91,7 @@ class SAR_imaging:
                 self.I[i, j]=np.pi*self.integration_time**2*self.azimuth_resolution/2*np.trapz(self.sigma[i,:]/pa*np.exp(-(np.pi/pa)**2*((x[i,j]-x[i,:]-self.beta*Ur[i,:]))**2), dx=self.dx*self.dy)
                 # print(f"{i},{j} {self.I[i,j]}")
         # print(f"sigma {self.I}")
+
     
     def average_NRCS(self, theta=None):
         if theta is None:
