@@ -1,0 +1,41 @@
+length_x: 5000
+length_y: 5000
+N_x: 128
+N_y: 128
+wind_speed: 10
+wind_direction: 0
+seconds: 5
+timestep: 0.5
+spectrum:
+  options:
+    - Pierson_Moskowitz
+    - JONSWAP
+    - Elfouhaily
+  chosen:
+    Elfouhaily
+spreading:
+  options:
+    - Simple_Cosine
+    - Longuet_Higgins
+    - Elfouhaily
+  chosen:
+    Longuet_Higgins
+polarization:
+  options:
+    - Vertical
+    - Horizontal
+  chosen:
+    Vertical
+n: 6
+S: 12
+fetch: 200000
+elfouhaily_k: 0.1
+spatial_resolution: 5
+H: 693000
+V: 7500
+incidence_angle: 50
+hydrodynamic_relaxation_rate: 0.5
+frequency: 5000000000
+range_resolution: 5
+azimuth_resolution: 5
+beta: 0
