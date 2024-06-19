@@ -77,8 +77,6 @@ class surfaceGenerator:
             wave_coefs_phased=(self.N_x*self.N_y*self.wave_coeffs*self.random_cg*np.exp(-1j*self.omega*t)).astype(np.complex64)
             self.surface[frame,:,:]=np.real(ifft2(ifftshift(wave_coefs_phased)))
         
-
-    
     def generate(self):
         self.generateSurface()
         self.generateTimeSeries()
@@ -107,3 +105,22 @@ class surfaceGenerator:
     
     def getSignificantWaveHeights(self):
         return [4*np.sqrt(np.var(self.surface[frame,:,:])) for frame, _ in enumerate(self.time)]
+    
+    def animate(self):
+        from matplotlib.animation import FuncAnimation
+        import matplotlib.pyplot as plt
+        # Create a figure and axis
+        fig, ax = plt.subplots()
+
+        # Initialize imshow plot
+        img = ax.imshow(self.surface[0,:,:], animated=True, origin='lower')
+
+        # Define the update function for animation
+        def update(frame):
+            # Update data with random values
+            img.set_array(self.surface[frame,:,:])
+            return img,
+
+        # Create animation
+        ani = FuncAnimation(fig, update, frames=self.surface.shape[0], interval=200, blit=True)
+        plt.show()

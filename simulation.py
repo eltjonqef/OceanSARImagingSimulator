@@ -1,33 +1,25 @@
-import matplotlib.pyplot as plt
-from omnidirectional_spectrum import spectrum_model
-from spreading_function import spreading_model
-import numpy as np
-from plots import plotMTFs, animate, plotModulations, plotSpectras, plotSurfaceSAR,coherence_time,plotCovariances,plotSpeckle
+from plots import plots
 from parameters import parameters
 import sys
-if len(sys.argv)!=2:
-    print("Usage:\n\t\tpython3 simulation.py parameter_file.yml")
+import os
+
+if len(sys.argv)!=3:
+    print("Usage:\n\t\tpython3 simulation.py parameter_file.yml output_folder")
     exit()
-params=parameters(sys.argv[1])
+CONFIG_FILE=sys.argv[1]
+OUTPUT_FOLDER = os.path.join(os.getcwd(), f"{sys.argv[2]}/{CONFIG_FILE.split('.')[0].split('/')[-1]}")
+if not os.path.exists(OUTPUT_FOLDER):
+    os.makedirs(OUTPUT_FOLDER)
+params=parameters(CONFIG_FILE)
+
 #%% Surface Generation
 from surface import surfaceGenerator
-surfaceGenerator=surfaceGenerator(params)
-Z=surfaceGenerator.generate()
-animate(Z)
+surface=surfaceGenerator(params)
+surface.generate()
+surface.animate()
 
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging
-sar=SAR_imaging(surfaceGenerator, params)
+sar=SAR_imaging(surface, params)
 sar.generate()
-plotMTFs(sar)
-plotModulations(sar)
-plotSpectras(sar)
-plotSurfaceSAR(sar)
-# plotCovariances(sar)
-# plotSpeckle(sar)
-integral_covariance=np.trapz(np.trapz((abs(sar.orbital_velocity_mtf()))**2*sar.PSI,sar.ky[:,0],axis=0),sar.kx[0,:],axis=0)
-
-
-
-plt.legend()
-plt.show()
+plot=plots(OUTPUT_FOLDER, sar)

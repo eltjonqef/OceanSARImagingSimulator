@@ -73,6 +73,7 @@ class SAR_imaging:
         self.orbital_velocity()
         # self.orbital_velocity_sum()
         self.image()
+        self.add_noise()
         self.v_covariance()
         self.Rv_covariance()
         self.R_covariance()
@@ -91,6 +92,7 @@ class SAR_imaging:
                 self.I[i, j]=np.pi*self.integration_time**2*self.azimuth_resolution/2*np.trapz(self.sigma[i,:]/pa*np.exp(-(np.pi/pa)**2*((x[i,j]-x[i,:]-self.beta*Ur[i,:]))**2), dx=self.dx*self.dy)
                 # print(f"{i},{j} {self.I[i,j]}")
         # print(f"sigma {self.I}")
+        self.I=self.I-np.mean(self.I)
 
     
     def average_NRCS(self, theta=None):
@@ -185,9 +187,9 @@ class SAR_imaging:
         print(f"coherence time {self.coherence_time()}")
         return self.azimuth_resolution*np.sqrt(1+(self.integration_time/self.coherence_time())**2)
     
-    def noisy_image(self):
+    def add_noise(self):
         noise=np.random.exponential(scale=1,size=(self.N_y, self.N_x))
-        return self.I*noise
+        self.noisy_I=self.I*noise
     
     def v_covariance(self):
         Fk=self.PSI*(2*np.pi/self.dx)*(2*np.pi/self.dy)
