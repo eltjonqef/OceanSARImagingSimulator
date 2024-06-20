@@ -24,4 +24,3 @@ for wind_speed in wind_speeds:
                 }
                 filled_template=template.format(**values)
                 print(filled_template)
-print(f"Generated {i} parameter files.")
