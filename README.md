@@ -43,7 +43,7 @@ python3 parallel_simulations.py config_folder output_folder
 ```
 ## License
 
-The code is licensed under AGPL-3.0
+The code is licensed under MIT
 
 ![25_chalmers_logo_390x300](https://github.com/eltjonqef/OceanSARImagingSimulator/assets/46346610/ea1820f1-df78-4ee7-9c7f-c9b3a38ed8da)
 
