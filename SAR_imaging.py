@@ -19,10 +19,6 @@ class SAR_imaging:
         self.beta=params.beta
         if params.beta==0:
             self.beta=self.R/self.V
-        print(f"r {self.R}")
-        print(f"r {self.V}")
-
-        print(f"beta {self.beta}")
         self.dx=params.length_x/params.N_x
         self.dy=params.length_y/params.N_y
         self.L_x=params.length_x
@@ -81,17 +77,10 @@ class SAR_imaging:
     def image(self):
         x, y=np.meshgrid(np.linspace(0, self.L_x, self.N_x), np.linspace(0, self.L_y, self.N_y))
         Ur=self.u_r
-        print(f"Variance of Obrital Velocities {np.var(Ur)}")
-        # print(f"rho0 {self.v_covariance(0)[0,0]} max {np.max(self.v_covariance(0))}")
-        # print(f"azimiuhth resolution {self.azimuth_resolution()}")
         pa=self.degraded_azimuthal_resolution()
-        print(f"degraged resolution {pa}")
-        # print(f"rho a {pa}")
         for i in range(self.N_y):
             for j in range(self.N_x):
                 self.I[i, j]=np.pi*self.integration_time**2*self.azimuth_resolution/2*np.trapz(self.sigma[i,:]/pa*np.exp(-(np.pi/pa)**2*((x[i,j]-x[i,:]-self.beta*Ur[i,:]))**2), dx=self.dx*self.dy)
-                # print(f"{i},{j} {self.I[i,j]}")
-        # print(f"sigma {self.I}")
         self.I=self.I-np.mean(self.I)
 
     
@@ -105,7 +94,6 @@ class SAR_imaging:
         S=omnidirectional_spectrum(spectrum=self.spectrum,k=k_brag,v=self.wind_speed,F=self.fetch).getSpectrum()
         D=spreading_function(function=self.spreading, theta=theta_brag, wind_direction=self.wind_direction,n=self.n, S=self.S, F=self.fetch, k=self.elfouhaily_k, v=self.wind_speed, good_k=None).getSpread()
         PSI=S*D
-        print(f"PSI SIZE {PSI.shape}")
         sn=0#np.gradient(self.surface,axis=0)
         sp=0#np.gradient(self.surface,axis=1)
         theta_l=np.arccos(np.cos(theta))
@@ -183,8 +171,6 @@ class SAR_imaging:
         return 3*self.wavelength/wind_speed_19_5*special.erf(2.7*self.spatial_resolution/wind_speed_19_5**2)**(-1/2)
 
     def degraded_azimuthal_resolution(self):
-        print(f"integration time {self.integration_time}")
-        print(f"coherence time {self.coherence_time()}")
         return self.azimuth_resolution*np.sqrt(1+(self.integration_time/self.coherence_time())**2)
     
     def add_noise(self):
@@ -213,6 +199,7 @@ class SAR_imaging:
     def nonlinear_mapping_transform(self, n):
         nonLinearTerms=np.zeros((self.N_y, self.N_x)).astype(np.complex64)
         for i in range(1,n+1):
+            print(i)
             nonLinearTerms+=self.nonLinearity(i)
         import matplotlib.pyplot as plt
         # plt.figure()
@@ -227,7 +214,7 @@ class SAR_imaging:
             factorial_2=0
         else:
             factorial_2=1/math.factorial(n-2)
-        return (2*np.pi)**(-2)*fftshift(fft2(1/math.factorial(n-1)*self.f_r*self.f_v**(n-1)+factorial_2*(self.f_rv-self.f_rv[0,0])*(np.rot90(self.f_rv,2)-self.f_rv[0,0])*self.f_r**(n-2)))
+        return (2*np.pi)**(-2)*fftshift(fft2(1/math.factorial(n-1)*self.f_r*self.f_v**(n-1)+factorial_2*(self.f_rv)*(np.rot90(self.f_rv,2))*self.f_r**(n-2)))
     
     def autocovariance(self, image, lag_x=0, lag_y=0):
         rows, cols = image.shape

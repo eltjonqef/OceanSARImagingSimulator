@@ -6,7 +6,7 @@ class plots:
     def __init__(self, output_folder, sar:SAR_imaging):
         self.output_folder=output_folder
         self.sar:SAR_imaging=sar
-        self.plotMTFs()
+        #self.plotMTFs()
         self.plotSpectra()
         self.plotImage()
         # plt.show()
@@ -26,8 +26,8 @@ class plots:
         ax2.set_ylabel("Range [N]")
         ax2.set_title("Noisy SAR Image")
         fig.tight_layout()
-        fig.savefig(f'{self.output_folder}/ocean_wave_field.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig.savefig(f'{self.output_folder}/ocean_wave_field.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(f'{self.output_folder}/ocean_wave_field.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(f'{self.output_folder}/ocean_wave_field.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
     def plotMTFs(self):
         fig1, ((axTilt, axHydrodynamic), (axRB, axVB))=plt.subplots(2,2)
@@ -56,8 +56,8 @@ class plots:
         axVB.set_xlabel("Azimuth Wavenumber")
         axVB.set_ylabel("Range Wavenumber")
         fig1.tight_layout()
-        fig1.savefig(f'{self.output_folder}/mtfs.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig1.savefig(f'{self.output_folder}/mtfs.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig1.savefig(f'{self.output_folder}/mtfs.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig1.savefig(f'{self.output_folder}/mtfs.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
         fig2, (axOrbitalMTF, axOrbital)=plt.subplots(1,2)
         axOrbitalMTF.pcolor(self.sar.kx, self.sar.ky, abs(self.sar.orbital_velocity_mtf()), cmap='gist_gray')
@@ -72,8 +72,8 @@ class plots:
         axOrbital.set_ylabel("Range [N]")
         # plt.colorbar(plotColorbar, ax=axOrbital)
         fig2.tight_layout()
-        fig2.savefig(f'{self.output_folder}/orbital.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig2.savefig(f'{self.output_folder}/orbital.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig2.savefig(f'{self.output_folder}/orbital.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig2.savefig(f'{self.output_folder}/orbital.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
         fig3, (axRARAbs, axRarPhase)=plt.subplots(1,2)
         axRARAbsPlot=axRARAbs.pcolor(self.sar.kx, self.sar.ky, abs(self.sar.RAR_MTF()), cmap='gist_gray')
@@ -91,8 +91,8 @@ class plots:
         axRarPhase.set_xlabel("Azimuth Wavenumber")
         axRarPhase.set_ylabel("Range Wavenumber")
         fig3.tight_layout()
-        fig3.savefig(f'{self.output_folder}/rar.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig3.savefig(f'{self.output_folder}/rar.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig3.savefig(f'{self.output_folder}/rar.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig3.savefig(f'{self.output_folder}/rar.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
         fig4, (axSARAbs, axSARPhase)=plt.subplots(1,2)
         axRARAbsPlot=axSARAbs.pcolor(self.sar.kx, self.sar.ky, abs(self.sar.SAR_MTF()), cmap='gist_gray')
@@ -110,8 +110,8 @@ class plots:
         axSARPhase.set_xlabel("Azimuth Wavenumber")
         axSARPhase.set_ylabel("Range Wavenumber")
         fig4.tight_layout()
-        fig4.savefig(f'{self.output_folder}/sar.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig4.savefig(f'{self.output_folder}/sar.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig4.savefig(f'{self.output_folder}/sar.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig4.savefig(f'{self.output_folder}/sar.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
     def plotSpectra(self):
         fig, ((ax1,ax2, ax3), (ax4, ax5, ax6))=plt.subplots(2, 3)
@@ -128,20 +128,20 @@ class plots:
         ax3.set_xlabel("Azimuth Wavenumber")
         ax3.set_ylabel("Range Wavenumber")
         ax4.contour(self.sar.kx, self.sar.ky,abs(self.sar.linear_mapping_transform()))#, extent=(self.sar.kx.min(),self.sar.kx.max(),self.sar.ky.min(),self.sar.ky.max()))
-        ax4.set_title("Linear SAR Mapping")
+        ax4.set_title("Linear Mapping")
         ax4.set_xlabel("Azimuth Wavenumber")
         ax4.set_ylabel("Range Wavenumber")
         ax5.contour(self.sar.kx, self.sar.ky,abs(self.sar.quasilinear_mapping_transform()))
-        ax5.set_title("Quasi Linear SAR Mapping")
+        ax5.set_title("Quasilinear Mapping")
         ax5.set_xlabel("Azimuth Wavenumber")
         ax5.set_ylabel("Range Wavenumber")
-        ax6.contour(self.sar.kx, self.sar.ky,abs((self.sar.nonlinear_mapping_transform(1))))
-        ax6.set_title("Non Linear SAR Mapping")
+        ax6.contour(self.sar.kx, self.sar.ky,abs((self.sar.nonlinear_mapping_transform(3))))
+        ax6.set_title("Nonlinear SAR Mapping")
         ax6.set_xlabel("Azimuth Wavenumber")
         ax6.set_ylabel("Range Wavenumber")
         fig.tight_layout()
-        fig.savefig(f'{self.output_folder}/spectra.eps', format='eps', dpi=300, bbox_inches='tight', pad_inches=0.1)
-        fig.savefig(f'{self.output_folder}/spectra.svg', format='svg', dpi=300, bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(f'{self.output_folder}/spectra.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
+        fig.savefig(f'{self.output_folder}/spectra.pdf', format='pdf', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
 
 # def plotCovariances(sar):

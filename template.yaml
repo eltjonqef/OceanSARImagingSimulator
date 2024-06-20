@@ -1,7 +1,7 @@
 length_x: 5000
 length_y: 5000
-N_x: 128
-N_y: 128
+N_x: 1024
+N_y: 1024
 wind_speed: {wind_speed}
 wind_direction: {wind_direction}
 seconds: 5

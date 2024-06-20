@@ -16,7 +16,7 @@ params=parameters(CONFIG_FILE)
 from surface import surfaceGenerator
 surface=surfaceGenerator(params)
 surface.generate()
-surface.animate()
+# surface.animate()
 
 #%% Sar Imaging
 from SAR_imaging import SAR_imaging

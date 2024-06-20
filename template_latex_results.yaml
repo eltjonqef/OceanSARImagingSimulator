@@ -1,0 +1,29 @@
+\section{{Case {case}}}
+\begin{{table}}[H]
+\begin{{center}}
+\begin{{tabular}}{{|l|l|}}
+\hline
+Parameter & Value \\
+\hline\hline
+Wind Speed &  ${wind_speed} \ m/s$ \\
+Wind Direction & ${wind_direction} \degree$ \\
+Incidence Angle & ${incidence_angle} \degree$\\
+beta & {beta}\\
+\hline
+\end{{tabular}}
+\end{{center}}
+\caption{{Case {case} parameters}}
+\label{{tab:case_{case}}}
+\end{{table}}
+\begin{{figure}}[H]
+    \centering
+    \includegraphics[width=\textwidth]{{figure/results/{case}/ocean_wave_field.eps}}
+    \caption{{Ocean wave field, SAR Image, Noisy SAR Image}}
+    \label{{fig:{case}_ocean_wave_field}}
+\end{{figure}}
+\begin{{figure}}[H]
+    \centering
+    \includegraphics[width=\textwidth]{{figure/results/{case}/spectra.eps}}
+    \caption{{Plots of spectra}}
+    \label{{fig:{case}_spectra}}
+\end{{figure}}

@@ -4,6 +4,8 @@ from numpy.fft import fft2, fftshift, ifft2, ifftshift, fftfreq
 from omnidirectional_spectrum import omnidirectional_spectrum, spectrum_model
 from spreading_function import spreading_function, spreading_model
 from parameters import parameters
+import warnings
+warnings.filterwarnings("ignore")
 class surfaceGenerator:
     def __init__(self, params:parameters):
         self.spectrum=params.spectrum
@@ -38,7 +40,6 @@ class surfaceGenerator:
         kx_res = kx[0, 1] - kx[0, 0]
         ky_res = ky[1, 0] - ky[0, 0]
         self.Ks=kx_res
-        print(f"kx_s {kx_s[1]-kx_s[0]}, kx_res {kx_res}")
         if self.MONOCHROMATIC:
             x=self.N//2+10
             y=self.N//2
