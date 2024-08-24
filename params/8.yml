@@ -2,7 +2,7 @@ length_x: 5000
 length_y: 5000
 N_x: 1024
 N_y: 1024
-wind_speed: 5
+wind_speed: 10
 wind_direction: 0
 seconds: 5
 timestep: 0.5
@@ -33,7 +33,7 @@ elfouhaily_k: 0.1
 spatial_resolution: 5
 H: 693000
 V: 7500
-incidence_angle: 50
+incidence_angle: 30
 hydrodynamic_relaxation_rate: 0.5
 frequency: 5000000000
 range_resolution: 5

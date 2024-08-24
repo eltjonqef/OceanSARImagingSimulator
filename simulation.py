@@ -5,8 +5,8 @@ import os
 
 if len(sys.argv)!=3:
     print("Usage:\n\t\tpython3 simulation.py parameter_file.yml output_folder")
-    exit()
-CONFIG_FILE=sys.argv[1]
+    # exit()
+CONFIG_FILE= sys.argv[1]
 OUTPUT_FOLDER = os.path.join(os.getcwd(), f"{sys.argv[2]}/{CONFIG_FILE.split('.')[0].split('/')[-1]}")
 if not os.path.exists(OUTPUT_FOLDER):
     os.makedirs(OUTPUT_FOLDER)

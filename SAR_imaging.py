@@ -6,6 +6,7 @@ from scipy import special
 from parameters import parameters
 from surface import surfaceGenerator
 from frequencyEnums import Band, Polarization
+import math
 
 class SAR_imaging:
     def __init__(self, surfaceGenerator:surfaceGenerator, params:parameters):
@@ -32,7 +33,7 @@ class SAR_imaging:
         self.incidence_angle=params.incidence_angle
         self.azimuth_resolution=params.azimuth_resolution
         self.range_resolution=params.range_resolution
-        self.spatial_resolution=self.azimuth_resolution*self.range_resolution
+        self.spatial_resolution=self.azimuth_resolution#*self.range_resolution
         self.ky=surfaceGenerator.KY#*np.sin(np.pi/2)#*np.sin(np.linspace(0,2*np.pi, self.N))#wavenumbers*np.sin((np.linspace(0, 2*np.pi,(N))))
         self.kx=surfaceGenerator.KX#*np.cos(np.pi/2)#np.cos(np.linspace(0,2*np.pi, self.N))#wavenumbers*np.cos((np.linspace(0, 2*np.pi,(N))))
         self.wavenumbers=surfaceGenerator.K
@@ -124,11 +125,9 @@ class SAR_imaging:
         return -1j*self.ky/np.tan(self.incidence_angle)
 
     def velocity_bunching_mtf(self):
-        return -1j*self.beta*self.kx*self.orbital_velocity_mtf()#*self.dispersion_relation*(np.sin(self.incidence_angle)*np.cos(self.wind_direction)+1j*np.cos(self.incidence_angle))
+        return -1j*self.beta*self.kx*self.orbital_velocity_mtf()
     
-    def orbital_velocity_mtf(self, negative=False):
-        if negative:
-            return -self.dispersion_relation*(self.kx/-self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
+    def orbital_velocity_mtf(self):
         return -self.dispersion_relation*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
     
     def orbital_velocity(self):
@@ -183,7 +182,7 @@ class SAR_imaging:
 
     def R_covariance(self):
         Fk=self.PSI*(2*np.pi/self.dx)*(2*np.pi/self.dy)
-        self.f_r=0.5*np.real(ifft2(ifftshift(abs(self.RAR_MTF())**2*Fk+abs(np.rot90(self.RAR_MTF(),2))**2*np.rot90(Fk,2))))
+        self.f_r=0.5*(ifft2(ifftshift(abs(self.RAR_MTF())**2*Fk+abs(np.rot90(self.RAR_MTF(),2))**2*np.rot90(Fk,2))))
 
     def Rv_covariance(self):
         Fk=self.PSI*(2*np.pi/self.dx)*(2*np.pi/self.dy)
@@ -199,8 +198,12 @@ class SAR_imaging:
     def nonlinear_mapping_transform(self, n):
         nonLinearTerms=np.zeros((self.N_y, self.N_x)).astype(np.complex64)
         for i in range(1,n+1):
-            print(i)
             nonLinearTerms+=self.nonLinearity(i)
+            
+
+        #     print(i)
+        #     nonLinearTerms+=self.nonLinearity(i)
+
         import matplotlib.pyplot as plt
         # plt.figure()
         # plt.contour(abs(nonLinearTerms))
@@ -208,13 +211,25 @@ class SAR_imaging:
         # return nonLinearTerms
         return np.exp(-self.kx**2*self.beta**2*self.f_v[0,0])*nonLinearTerms
     
-    def nonLinearity(self, n):
-        import math
+    def nonLinearity(self,i):
+        nonLinearTerms=np.zeros((self.N_y, self.N_x)).astype(np.complex64)
+        nonLinearTerms+=(self.kx*self.beta)**(2*i-2)*self.P_2n(i)
+        nonLinearTerms+=(self.kx*self.beta)**(2*i-1)*self.P_2n1(i)
+        nonLinearTerms+=(self.kx*self.beta)**(2*i)*self.P_2n2(i)
+        return nonLinearTerms
+    
+    def P_2n(self,n):
+        return (2*np.pi)**(-2)*fftshift(fft2((self.f_v**n)/math.factorial(n)))
+    
+    def P_2n1(self,n):
+        return (2*np.pi)**(-2)*fftshift(fft2((1j*(self.f_rv-np.rot90(self.f_rv,2))*self.f_v**(n-1))/math.factorial(n-1)))
+
+    def P_2n2(self, n):
         if n==1:
             factorial_2=0
         else:
             factorial_2=1/math.factorial(n-2)
-        return (2*np.pi)**(-2)*fftshift(fft2(1/math.factorial(n-1)*self.f_r*self.f_v**(n-1)+factorial_2*(self.f_rv)*(np.rot90(self.f_rv,2))*self.f_r**(n-2)))
+        return (2*np.pi)**(-2)*fftshift(fft2(1/math.factorial(n-1)*self.f_r*self.f_v**(n-1)+factorial_2*(self.f_rv-self.f_rv[0,0])*(np.rot90(self.f_rv,2)-self.f_rv[0,0])*self.f_r**(n-2)))
     
     def autocovariance(self, image, lag_x=0, lag_y=0):
         rows, cols = image.shape
