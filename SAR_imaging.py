@@ -27,17 +27,17 @@ class SAR_imaging:
         self.N_x=params.N_x
         self.N_y=params.N_y
         self.surface=surfaceGenerator.surface[0,:,:]
+        self.Z=fftshift(fft2(self.surface))
         self.wind_speed=params.wind_speed
         self.wind_direction=params.wind_direction
         self.fetch=params.fetch
         self.incidence_angle=params.incidence_angle
         self.azimuth_resolution=params.azimuth_resolution
         self.range_resolution=params.range_resolution
-        self.spatial_resolution=self.azimuth_resolution#*self.range_resolution
-        self.ky=surfaceGenerator.KY#*np.sin(np.pi/2)#*np.sin(np.linspace(0,2*np.pi, self.N))#wavenumbers*np.sin((np.linspace(0, 2*np.pi,(N))))
-        self.kx=surfaceGenerator.KX#*np.cos(np.pi/2)#np.cos(np.linspace(0,2*np.pi, self.N))#wavenumbers*np.cos((np.linspace(0, 2*np.pi,(N))))
+        self.spatial_resolution=self.azimuth_resolution
+        self.ky=surfaceGenerator.KY
+        self.kx=surfaceGenerator.KX
         self.wavenumbers=surfaceGenerator.K
-        # self.theta=np.linspace(0, 2*np.pi, (params.N))
         self.spectrum=params.spectrum
         self.spreading=params.spreading
         self.dispersion_relation=surfaceGenerator.omega
@@ -102,7 +102,7 @@ class SAR_imaging:
         return 8*np.pi*self.k_e**4*np.cos(theta_l)**4*PSI*np.abs(self.complex_scattering(theta_l))**2
     
     def NRCS(self):
-        self.sigma=self.average_NRCS()*(1+np.real(2*ifft2(ifftshift(self.RAR_MTF()*fftshift(fft2(self.surface))+np.conj(self.RAR_MTF()*fftshift(fft2(self.surface)))))))
+        self.sigma=self.average_NRCS()*(1+np.real(2*ifft2(ifftshift(self.RAR_MTF()*self.Z+np.conj(self.RAR_MTF()*self.Z)))))
 
     def complex_scattering(self, theta_l):
         sn=np.pi/2#np.gradient(self.surface,axis=0)
@@ -131,7 +131,7 @@ class SAR_imaging:
         return -self.dispersion_relation*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)*1j+np.cos(self.incidence_angle))
     
     def orbital_velocity(self):
-        self.u_r=np.real(ifft2(ifftshift(self.orbital_velocity_mtf()*fftshift(fft2(self.surface)))))
+        self.u_r=np.real(ifft2(ifftshift(self.orbital_velocity_mtf()*self.Z)))
 
     def orbital_velocity_sum(self):
         x, y=np.meshgrid(np.linspace(-self.L_x/2,self.L_x/2,self.N_x), np.linspace(-self.L_y/2,self.L_y/2,self.N_y))
@@ -151,10 +151,6 @@ class SAR_imaging:
         u_y*=g
         u_z*=g
         self.u_r_sum=u_z*np.cos(self.incidence_angle)-np.sin(self.incidence_angle)*(u_x*np.sin(self.wind_direction)+u_y*np.cos(self.wind_direction))
-
-    def mean_orbital_velocity(self):
-        B_f=2/(self.kx*self.dx)*np.sin(self.kx*self.dx/2)*2/(self.ky*self.dx)*np.sin(self.ky*self.dx/2)*2/(self.dispersion_relation*self.integration_time)*np.sin(self.dispersion_relation*self.integration_time/2)
-        return np.real(ifft2(ifftshift(fftshift(fft2(self.u_r))*B_f)))
     
     def orbital_acceleration_mtf(self):
         return self.dispersion_relation**2*(self.ky/self.wavenumbers*np.sin(self.incidence_angle)+1j*np.cos(self.incidence_angle))
@@ -199,23 +195,13 @@ class SAR_imaging:
         nonLinearTerms=np.zeros((self.N_y, self.N_x)).astype(np.complex64)
         for i in range(1,n+1):
             nonLinearTerms+=self.nonLinearity(i)
-            
-
-        #     print(i)
-        #     nonLinearTerms+=self.nonLinearity(i)
-
-        import matplotlib.pyplot as plt
-        # plt.figure()
-        # plt.contour(abs(nonLinearTerms))
-        # plt.show()
-        # return nonLinearTerms
         return np.exp(-self.kx**2*self.beta**2*self.f_v[0,0])*nonLinearTerms
     
     def nonLinearity(self,i):
         nonLinearTerms=np.zeros((self.N_y, self.N_x)).astype(np.complex64)
-        nonLinearTerms+=(self.kx*self.beta)**(2*i-2)*self.P_2n(i)
+        nonLinearTerms+=(self.kx*self.beta)**(2*i-2)*self.P_2n2(i)
         nonLinearTerms+=(self.kx*self.beta)**(2*i-1)*self.P_2n1(i)
-        nonLinearTerms+=(self.kx*self.beta)**(2*i)*self.P_2n2(i)
+        nonLinearTerms+=(self.kx*self.beta)**(2*i)*self.P_2n(i)
         return nonLinearTerms
     
     def P_2n(self,n):
@@ -230,25 +216,3 @@ class SAR_imaging:
         else:
             factorial_2=1/math.factorial(n-2)
         return (2*np.pi)**(-2)*fftshift(fft2(1/math.factorial(n-1)*self.f_r*self.f_v**(n-1)+factorial_2*(self.f_rv-self.f_rv[0,0])*(np.rot90(self.f_rv,2)-self.f_rv[0,0])*self.f_r**(n-2)))
-    
-    def autocovariance(self, image, lag_x=0, lag_y=0):
-        rows, cols = image.shape
-        mean_image = np.mean(image)
-        autocov = 0.0
-        for i in range(rows - lag_y):
-            for j in range(cols - lag_x):
-                autocov += (image[i, j] - mean_image) * (image[i + lag_y, j + lag_x] - mean_image)
-        autocov /= ((rows - lag_y) * (cols - lag_x))
-        
-        return autocov
-    
-    def crosscovariance(self, image1, image2, lag_x=0, lag_y=0):
-        rows, cols = image1.shape
-        mean_image1 = np.mean(image1)
-        mean_image2 = np.mean(image2)
-        cov = 0.0
-        for i in range(rows - abs(lag_y)):
-            for j in range(cols - abs(lag_x)):
-                cov += (image1[i, j] - mean_image1) * (image2[i + lag_y, j + lag_x] - mean_image2)
-        return cov / ((rows - abs(lag_y)) * (cols - abs(lag_x)))
-        

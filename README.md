@@ -8,7 +8,9 @@ Project worker: Eltjon Qefalija
 
 Supervisor: Anis El Youncha
 
-Examiner: Leif Erikkson
+Examiner: Leif Eriksson
+
+![Sea Surface](animation.gif)
 
 ## Installation
 ### Clone

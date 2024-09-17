@@ -8,7 +8,6 @@ class plots:
         self.sar:SAR_imaging=sar
         #self.plotMTFs()
         self.plotImages()
-        # self.plotSARImage()
         self.plotSpectra()
         # plt.show()
 
@@ -32,7 +31,6 @@ class plots:
         ax2.set_xlabel("Azimuth [m]")
         ax2.set_ylabel("Range [m]")
         ax2.set_title("Noisy SAR Image")
-        #fig.savefig(f'{self.output_folder}/SARImages.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
         fig.savefig(f'{self.output_folder}/images.png', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
     def plotMTFs(self):
@@ -121,19 +119,19 @@ class plots:
 
     def plotSpectra(self):
         fig, ((ax1,ax2, ax3), (ax4, ax5, ax6))=plt.subplots(2, 3,layout='compressed',)
-        ax1.contour(self.sar.kx, self.sar.ky, abs(self.sar.PSI))#, extent=(self.sar.kx.min(),self.sar.kx.max(),self.sar.ky.min(),self.sar.ky.max()))
+        ax1.contour(self.sar.kx, self.sar.ky,abs(self.sar.PSI))
         ax1.set_title("Original Spectrum")
         ax1.set_xlabel("Azimuth Wavenumber")
         ax1.set_ylabel("Range Wavenumber")
-        ax2.contour(self.sar.kx, self.sar.ky,abs(fftshift(fft2(self.sar.surface))))#, extent=(self.sar.kx.min(),self.sar.kx.max(),self.sar.ky.min(),self.sar.ky.max()))
+        ax2.contour(self.sar.kx, self.sar.ky,abs(fftshift(fft2(self.sar.surface))))
         ax2.set_title("Sea surface Spectrum")
         ax2.set_xlabel("Azimuth Wavenumber")
         ax2.set_ylabel("Range Wavenumber")
-        ax3.contour(self.sar.kx, self.sar.ky,abs(fftshift(fft2(self.sar.noisy_I))))#, extent=(self.sar.kx.min(),self.sar.kx.max(),self.sar.ky.min(),self.sar.ky.max()))
+        ax3.contour(self.sar.kx, self.sar.ky,abs(fftshift(fft2(self.sar.noisy_I))))
         ax3.set_title("Noisy SAR Spectrum")
         ax3.set_xlabel("Azimuth Wavenumber")
         ax3.set_ylabel("Range Wavenumber")
-        ax4.contour(self.sar.kx, self.sar.ky,abs(self.sar.linear_mapping_transform()))#, extent=(self.sar.kx.min(),self.sar.kx.max(),self.sar.ky.min(),self.sar.ky.max()))
+        ax4.contour(self.sar.kx, self.sar.ky,abs(self.sar.linear_mapping_transform()))
         ax4.set_title("Linear Mapping")
         ax4.set_xlabel("Azimuth Wavenumber")
         ax4.set_ylabel("Range Wavenumber")
@@ -172,35 +170,5 @@ class plots:
             ax5.set_ylim(-0.125,0.125)
             ax6.set_ylim(-0.125,0.125)
         fig.tight_layout()
-        #fig.savefig(f'{self.output_folder}/spectra.svg', format='svg', dpi=150, bbox_inches='tight', pad_inches=0.1)
         fig.savefig(f'{self.output_folder}/spectra.png', dpi=150, bbox_inches='tight', pad_inches=0.1)
 
-
-# def plotCovariances(sar):
-#     fig, (axFV,axFR,axFRV)=plt.subplots(1,3)
-#     axFV.plot(fftshift(self.sar.f_v))
-#     axFV.set_title("Orbital Velocity Covariance")
-#     axFR.plot(fftshift(self.sar.f_r))
-#     axFR.set_title("RAR Image Covariance")
-#     axFRV.plot(fftshift(self.sar.f_rv))
-#     axFRV.set_title("RAR Image Orbital Velocity Covariance")
-
-
-def coherence_time():
-    from scipy import special
-    fig, ax=plt.subplots(1,1)
-    wind_speed_19_5=np.logspace(0,1.2,100)#self.wind_speed*(19.5/10)**(1/7)
-    frequencies=np.array([1.579,2.671,5.3,10,14,35])
-    for f in frequencies:
-        light_speed=299792458
-        wavelength=light_speed/(f*1e9)
-        ts=3*wavelength/wind_speed_19_5*special.erf(2.7*30/wind_speed_19_5**2)**(-1/2)
-        ax.plot(wind_speed_19_5,ts*1000,label=f"{f} GHz")
-
-    ax.set_yscale('log')
-    ax.set_xscale('log')
-    ax.set_xlabel("Windspeed [m/s]")
-    ax.set_ylabel("Coherence Time [ms]")
-    ax.set_title("Coherence time")
-    plt.legend()
-    fig.savefig('coherence_time.png', dpi=150, bbox_inches='tight', pad_inches=0.1)

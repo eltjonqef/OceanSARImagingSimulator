@@ -81,7 +81,6 @@ class surfaceGenerator:
     def generate(self):
         self.generateSurface()
         self.generateTimeSeries()
-        #self.frameNew()
         return self.surface
 
 
