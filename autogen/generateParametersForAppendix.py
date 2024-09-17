@@ -1,7 +1,7 @@
 import sys
 import os
 if len(sys.argv)!=3:
-    print("Usage: python3 generateParameters.py input.yaml output_folder")
+    print("Usage: python3 generateParametersForAppendix.py input.yaml output_folder")
 
 OUTPUT_FOLDER = os.path.join(os.getcwd(), f"{sys.argv[2]}")
 if not os.path.exists(OUTPUT_FOLDER):
